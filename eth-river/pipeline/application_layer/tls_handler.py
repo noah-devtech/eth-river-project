@@ -19,5 +19,7 @@ def process(packet, layers, context):
         details = f"HTTPS (TLS) SNI: {sni_domain}"
         format_output(context, "TLS-Hello", details)
     else:
-        details = "TLS Encrypted Data or No SNI"
+        details = f"{get_nested_attr(tls_layer, "record","")}"
+        # packet.tls.app_data_proto='Hypertext Transfer Protocol'
+        # packet.tls.record=
         format_output(context, "TLS", details)
