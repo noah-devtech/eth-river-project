@@ -37,3 +37,4 @@ def process(packet, layers, context):
     else:
         # DATAレイヤーの上に何もないとき
         print("only DATA layer")
+        return
