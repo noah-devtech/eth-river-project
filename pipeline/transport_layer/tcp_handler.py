@@ -1,10 +1,11 @@
-from ..application_layer import dns_handler, default_handler, http_handler
+from ..application_layer import dns_handler, default_handler, http_handler, tls_handler
 from utils import format_output, get_nested_attr
 
 # 宛先ポート番号と担当ハンドラーの対応表
 APPLICATION_HANDLERS = {
     "dns": dns_handler,  # DNS over TCP
     "http": http_handler, # HTTP over TCP
+    "tls": tls_handler
 }
 # TODO 再送や並び替えの処理の実装
 
@@ -28,7 +29,7 @@ def process(packet, layers, context):
         # pysharkがリアセンブルしてくれたパケットが乗っていたらここ来る
         # 今のところ上のパケットを処理するためにセグメンテーションされたセグメントは捨てる
         layers.pop(0)
-    if len(layers) > 1:
+    if len(layers) >= 1:
         handler = APPLICATION_HANDLERS.get(
             get_nested_attr(layers[0],"layer_name"),
             default_handler

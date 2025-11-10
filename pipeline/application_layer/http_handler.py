@@ -1,4 +1,3 @@
-# pipeline/transport_layer/application_layer/dns_handler.py
 from utils import format_output, get_nested_attr, no_higher_layer
 
 
@@ -12,7 +11,7 @@ def process(packet, layers, context):
 
     http_layer = layers.pop(0)
     http_url = http_layer.get_field("request_full_uri")
-    if http_layer.request == "True":
+    if get_nested_attr(http_layer,"request") == "True":
         details = f"url: {http_url}"
         """
         # HTTPリクエストメソッドで場合分け
@@ -32,8 +31,8 @@ def process(packet, layers, context):
     """
     else:
         # HTTPレスポンスの場合
-        context = layers[0].get_field("")
-        details = f"url: {http_url} context: {context}"
+        http_context = layers[0].get_field("")
+        details = f"url: {http_url} context: {http_context}"
 
     # ステータスコード
     # 2xx
