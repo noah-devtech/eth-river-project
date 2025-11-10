@@ -13,4 +13,3 @@ def process(packet, layers, context):
     protocol = "Other"
     details = f"Unsupported Protocol"
 
-    format_output(context, protocol, details)
