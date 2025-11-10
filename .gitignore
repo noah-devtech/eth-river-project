@@ -1,0 +1,11 @@
+# Python Caches
+__pycache__/
+*.pyc
+
+# Virtual Environment (venv)
+venv/
+
+# OS specific
+.DS_Store
+
+test-data/
