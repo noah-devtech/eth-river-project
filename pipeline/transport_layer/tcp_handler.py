@@ -1,10 +1,11 @@
-from ..application_layer import dns_handler, default_handler, http_handler
+from ..application_layer import dns_handler, default_handler, http_handler, tls_handler
 from utils import format_output, get_nested_attr
 
 # 宛先ポート番号と担当ハンドラーの対応表
 APPLICATION_HANDLERS = {
     "dns": dns_handler,  # DNS over TCP
     "http": http_handler, # HTTP over TCP
+    "tls": tls_handler
 }
 # TODO 再送や並び替えの処理の実装
 
