@@ -28,9 +28,12 @@ def process(packet, layers, context):
         # pysharkがリアセンブルしてくれたパケットが乗っていたらここ来る
         # 今のところ上のパケットを処理するためにセグメンテーションされたセグメントは捨てる
         layers.pop(0)
-    handler = APPLICATION_HANDLERS.get(
-        get_nested_attr(layers[0],"layer_name"),
-        default_handler
-    )
-
-    handler.process(packet, layers, context)
+    if len(layers) > 1:
+        handler = APPLICATION_HANDLERS.get(
+            get_nested_attr(layers[0],"layer_name"),
+            default_handler
+        )
+        handler.process(packet, layers, context)
+    else:
+        # DATAレイヤーの上に何もないとき
+        print("only DATA layer")
