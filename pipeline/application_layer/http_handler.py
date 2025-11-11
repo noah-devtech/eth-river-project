@@ -31,7 +31,7 @@ def process(packet, layers, context):
     """
     else:
         # HTTPレスポンスの場合
-        http_context = layers[0].get_field("")
+        http_context = get_nested_attr(http_layer,"")
         details = f"url: {http_url} context: {http_context}"
 
     # ステータスコード
