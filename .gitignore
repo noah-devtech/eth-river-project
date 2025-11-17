@@ -41,3 +41,16 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+
+# -------------------------------
+# アプリケーション固有の除外設定
+# -------------------------------
+
+# src/main/resources/*.properties
+
+# ローカル環境固有の設定ファイルを除外
+src/main/resources/local.properties
+
+# 機密情報を含むファイルを除外
+src/main/resources/secrets.properties
