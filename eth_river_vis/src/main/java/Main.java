@@ -115,19 +115,21 @@ public class Main extends PApplet {
 
             // 粒子の色をプロトコルによって決定
             int particleColor = color(100); // デフォルト (灰色)
-            if (lastProtocol.equals("DNS")) {
-                particleColor = color(0, 255, 0); // DNS = 緑
-            } else if (lastProtocol.equals("TLS-Hello")) {
-                particleColor = color(255, 255, 0); // TLS-Hello (SNI) = 黄色
-            } else if (lastProtocol.equals("TLS")) {
-                particleColor = color(0, 0, 200); // TLS (暗号化データ) = 暗い青
-            } else if (lastProtocol.equals("HTTP Request")) {
-                particleColor = color(0, 150, 255); // HTTPリクエスト = 水色
-            } else if (lastProtocol.equals("TCP-SYN")) {
-                particleColor = color(255, 255, 255); // TCP-SYN = 白
-            } else if (lastProtocol.equals("QUIC-Hello")) {
-                particleColor = color(255, 0, 255); // QUIC-Hello = マゼンタ
-            }
+            // QUIC-Hello = マゼンタ
+            particleColor = switch (lastProtocol) {
+                case "DNS" -> color(0, 255, 0); // DNS = 緑
+
+                case "TLS-Hello" -> color(255, 255, 0); // TLS-Hello (SNI) = 黄色
+
+                case "TLS" -> color(0, 0, 200); // TLS (暗号化データ) = 暗い青
+
+                case "HTTP Request" -> color(0, 150, 255); // HTTPリクエスト = 水色
+
+                case "TCP-SYN" -> color(255, 255, 255); // TCP-SYN = 白
+
+                case "QUIC-Hello" -> color(255, 0, 255);
+                default -> particleColor;
+            };
 
             // 粒子の大きさをパケット長で決定 (例)
             float particleSize = map(lastLength, 40, 1500, 2, 20); // 40-1500バイトを2-20ピクセルに変換
@@ -178,11 +180,8 @@ public class Main extends PApplet {
 
         //3.画面外に出たかどうかの判定
         boolean isDead() {
-            if (pos.y > height) { // 画面の下端より下に行ったら
-                return true;
-            } else {
-                return false;
-            }
+            // 画面の下端より下に行ったら
+            return pos.y > height;
         }
     }
 
