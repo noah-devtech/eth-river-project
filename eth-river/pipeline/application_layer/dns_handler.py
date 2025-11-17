@@ -30,7 +30,8 @@ def process(packet, layers, context):
             answers = get_nested_attr(dns_layer, "ptr_domain_name")
         elif record == "6":
             # TODO res_amountの数字おかしいので確認
-            answers = " MNAME: "+get_nested_attr(dns_layer, "soa_mname")+"RNAME: "+get_nested_attr(dns_layer, "soa_rname_name")
+            #answers = " MNAME: "+get_nested_attr(dns_layer, "soa_mname")+"RNAME: "+get_nested_attr(dns_layer, "soa_rname_name")
+            answers = "SOA record"
         else:
             answers = "unknown record"
         details = f"Query: {query_name}, Answer: {answers}, id: {transaction_id}, res_amount: {int(get_nested_attr(dns_layer,"count_answers"))}"
