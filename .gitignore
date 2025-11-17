@@ -12,5 +12,4 @@ venv/
 
 test-data/
 .vscode/
-.note/
-note/instructions.md
+note/
