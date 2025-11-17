@@ -107,8 +107,9 @@ public class Main extends PApplet {
             lastProtocol = theOscMessage.get(0).stringValue();
             lastLength = theOscMessage.get(1).intValue();
             lastDetails = theOscMessage.get(2).stringValue();
-            lastSrcIp = theOscMessage.get(3).stringValue();
-            lastDstIp = theOscMessage.get(4).stringValue();
+            lastSrcIp = theOscMessage.get(4).stringValue();
+            lastDstIp = theOscMessage.get(5).stringValue();
+            println(theOscMessage.get(4).stringValue() +"->"+theOscMessage.get(5).stringValue());
 
             // --- ★ここからパーティクル生成 ---
             // 3. 受信したデータで新しいParticleを生成
@@ -125,10 +126,10 @@ public class Main extends PApplet {
 
                 case "HTTP Request" -> color(0, 150, 255); // HTTPリクエスト = 水色
 
-                case "TCP-SYN" -> color(255, 255, 255); // TCP-SYN = 白
+                case "wg" -> color(64, 0, 128); //WireGuard = 紫
 
-                case "QUIC-Hello" -> color(255, 0, 255);
-                default -> particleColor;
+                case "QUIC-Hello" -> color(255, 0, 255); // = ピンク
+                default -> color(255, 255, 255); // その他 = 白
             };
 
             // 粒子の大きさをパケット長で決定 (例)
