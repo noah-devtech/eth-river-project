@@ -95,8 +95,7 @@ public class Main extends PApplet {
             // 3. 受信したデータで新しいParticleを生成
 
             // 粒子の色をプロトコルによって決定
-            int particleColor = color(100); // デフォルト (灰色)
-            // QUIC-Hello = マゼンタ
+            int particleColor;
             particleColor = switch (lastProtocol) {
                 case "DNS" -> color(0, 255, 0); // DNS = 緑
 
