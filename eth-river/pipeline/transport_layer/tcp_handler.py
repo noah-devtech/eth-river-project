@@ -23,7 +23,9 @@ def process(packet, layers, context):
     context["dest_port"] = get_nested_attr(tcp_layer, "dstport")
 
     if len(layers) == 0:
-        print("TCP has no higher layer")
+        protocol = "TCP"
+        details = f"No higher layer protocol"
+        format_output(context, protocol, details)
         return
     if get_nested_attr(layers[0],"layer_name") == "DATA":
         # pysharkがリアセンブルしてくれたパケットが乗っていたらここ来る
