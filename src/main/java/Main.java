@@ -3,12 +3,14 @@ import processing.core.PVector;
 import oscP5.*; // oscP5 ライブラリをインポート
 import netP5.*; // netP5 ライブラリをインポート
 import java.util.ArrayList;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class Main extends PApplet {
 
     OscP5 oscP5; // oscP5 のインスタンス
 
-    int listenPort = 12345; // pyshark (main.py) が送信しているポート
+    int listenPort;
 
     // ★パーティクル（粒子）のリストを作成
     ArrayList<Particle> particles;
@@ -28,6 +30,28 @@ public class Main extends PApplet {
 
     @Override
     public void setup() {
+        // --- 設定ファイルの読み込み ---
+        Properties props = new Properties();
+        // "config.properties" をクラスパスのルートから探す
+        try (InputStream input = Main.class.getClassLoader().getResourceAsStream("config.properties")) {
+
+            if (input == null) {
+                println("設定ファイル (config.properties) が見つかりません。");
+                // デフォルト値を使うか、エラーとして終了するか決める
+                listenPort = 12345; // フォールバック
+            } else {
+                props.load(input); // ファイルを読み込む
+
+                // "app.listenPort" の値を取得 (String) し、整数 (int) に変換
+                String portStr = props.getProperty("app.listenPort"); //
+                listenPort = Integer.parseInt(portStr);
+            }
+
+        } catch (Exception e) {
+            println("設定ファイルの読み込み中にエラーが発生しました: " + e.getMessage());
+            listenPort = 12345; // エラー時もフォールバック
+        }
+        // --- 読み込み完了 ---
         background(0);  // 背景を黒に
         //★パーティクルリストを初期化
         particles = new ArrayList<Particle>();
