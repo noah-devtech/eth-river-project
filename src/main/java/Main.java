@@ -30,28 +30,7 @@ public class Main extends PApplet {
 
     @Override
     public void setup() {
-        // --- 設定ファイルの読み込み ---
-        Properties props = new Properties();
-        // "config.properties" をクラスパスのルートから探す
-        try (InputStream input = Main.class.getClassLoader().getResourceAsStream("config.properties")) {
-
-            if (input == null) {
-                println("設定ファイル (config.properties) が見つかりません。");
-                // デフォルト値を使うか、エラーとして終了するか決める
-                listenPort = 12345; // フォールバック
-            } else {
-                props.load(input); // ファイルを読み込む
-
-                // "app.listenPort" の値を取得 (String) し、整数 (int) に変換
-                String portStr = props.getProperty("app.listenPort"); //
-                listenPort = Integer.parseInt(portStr);
-            }
-
-        } catch (Exception e) {
-            println("設定ファイルの読み込み中にエラーが発生しました: " + e.getMessage());
-            listenPort = 12345; // エラー時もフォールバック
-        }
-        // --- 読み込み完了 ---
+        loadConfig();
         background(0);  // 背景を黒に
         //★パーティクルリストを初期化
         particles = new ArrayList<Particle>();
@@ -110,6 +89,7 @@ public class Main extends PApplet {
             lastSrcIp = theOscMessage.get(4).stringValue();
             lastDstIp = theOscMessage.get(5).stringValue();
             println(theOscMessage.get(4).stringValue() +"->"+theOscMessage.get(5).stringValue());
+            println(packetDirection(lastSrcIp, lastDstIp));
 
             // --- ★ここからパーティクル生成 ---
             // 3. 受信したデータで新しいParticleを生成
@@ -144,8 +124,44 @@ public class Main extends PApplet {
             println("OSCメッセージの引数処理中にエラー:", e);
         }
     }
+    private void loadConfig(){
+        // --- 設定ファイルの読み込み ---
+        Properties props = new Properties();
+        // "config.properties" をクラスパスのルートから探す
+        try (InputStream input = Main.class.getClassLoader().getResourceAsStream("config.properties")) {
 
+            if (input == null) {
+                println("設定ファイル (config.properties) が見つかりません。");
+                // デフォルト値を使うか、エラーとして終了するか決める
+                listenPort = 12345; // フォールバック
+            } else {
+                props.load(input); // ファイルを読み込む
 
+                // "app.listenPort" の値を取得 (String) し、整数 (int) に変換
+                String portStr = props.getProperty("app.listenPort"); //
+                listenPort = Integer.parseInt(portStr);
+            }
+
+        } catch (Exception e) {
+            println("設定ファイルの読み込み中にエラーが発生しました: " + e.getMessage());
+            listenPort = 12345; // エラー時もフォールバック
+        }
+    }
+    private String packetDirection(String srcIp, String dstIp){
+        if(isLocal(srcIp) && isLocal(dstIp)){
+            return "Local";
+        }else if(isLocal(srcIp) && !isLocal(dstIp)){
+            return "Outbound";
+        }else if(!isLocal(srcIp) && isLocal(dstIp)){
+            return "Inbound";
+        }else{
+            return "Unknown";
+        }
+    }
+
+    private boolean isLocal(String ip){
+        return ip.equals("127.0.0.1") || ip.equals("localhost") || ip.equals("160.194.177.107");
+    }
     // === = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     // ★★★ パーティクルクラス(ここから下をスケッチの末尾に追加) ★★★
     // ==== = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
