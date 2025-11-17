@@ -127,10 +127,10 @@ def format_output(context, protocol, details):
             # 送信するデータをリストにまとめる
             # (openFrameworks側で受け取る順番と型を合わせる)
             data_to_send = [
-                protocol,  # 1. プロトコル名 (String)
+                protocol.lower().replace(" ", "_"),  # 1. プロトコル名 (String)
                 int(context.get("length", 0)),  # 2. パケット長 (Int)
                 details,  # 3. 詳細 (String)
-                direction,  # 4. 通信方向 (String)
+                int(context.get("packet_number", None)),  # 4. パケットナンバー(Int)
                 context.get("source_ip", "?"),  # 5. 送信元IP (String)
                 context.get("dest_ip", "?"),  # 6. 宛先IP (String)
             ]
