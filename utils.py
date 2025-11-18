@@ -2,7 +2,6 @@ import pyshark
 import sys
 import socket
 import ipaddress
-from datetime import datetime
 
 # netifacesがあれば、より正確なサブネットマスクを取得できる
 try:
@@ -99,7 +98,7 @@ def format_output(context, protocol, details):
     """
     length_str = f"{context.get("length","?")}"
     number_str = f"{context.get('packet_number', '?')}"
-    time_str = context["timestamp"].strftime("%H:%M:%S.%f")[:-3]
+    time = context["timestamp"]  # floatのまま表示
     direction = get_traffic_direction(
         context.get("source_ip", "?"),
         context.get("dest_ip", "?"),
@@ -110,7 +109,7 @@ def format_output(context, protocol, details):
 
     print(
         f"number:{number_str:<5} |"
-        f"time:{time_str} | "
+        f"time:{time} | "
         f"{direction:<8} | "
         f"proto:{protocol:<5} | "
         f"{source_str:<21} -> {dest_str:<21} | "
@@ -121,11 +120,10 @@ def format_output(context, protocol, details):
     if osc_client:
         try:
             # OSCアドレス（ラベル）を決定
-            # (例: "/packet/dns", "/packet/http_request" など)
+            # (例: "/packet/dns"など)
             osc_address = f"/packet/{protocol.lower().replace(' ', '_')}"
 
             # 送信するデータをリストにまとめる
-            # (openFrameworks側で受け取る順番と型を合わせる)
             data_to_send = [
                 protocol.lower().replace(" ", "_"),  # 1. プロトコル名 (String)
                 int(context.get("length", 0)),  # 2. パケット長 (Int)
