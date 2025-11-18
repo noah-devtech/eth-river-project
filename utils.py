@@ -112,12 +112,12 @@ def format_output(context, protocol, details):
         segments_str = ""
 
     print(
-        f"number:{number_str:<5} |"
-        f"time:{time} | "
+        f"number:{number_str:<5} | "
+        f"time:{time:<17} | "
         f"{direction:<8} | "
         f"proto:{protocol:<5} | "
         f"{source_str:<21} -> {dest_str:<21} | "
-        f"length:{length_str:<4} |"
+        f"length:{length_str:<4} | "
         f"{details}"
         f"{segments_str}"
     )
