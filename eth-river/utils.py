@@ -106,6 +106,10 @@ def format_output(context, protocol, details):
     )
     source_str = f"{context.get('source_ip', '?')}:{context.get('source_port', '?')}"
     dest_str = f"{context.get('dest_ip', '?')}:{context.get('dest_port', '?')}"
+    if 'segments' in context:
+        segments_str = f"| segments:{context.get('segments')}"
+    else:
+        segments_str = ""
 
     print(
         f"number:{number_str:<5} |"
@@ -115,6 +119,7 @@ def format_output(context, protocol, details):
         f"{source_str:<21} -> {dest_str:<21} | "
         f"length:{length_str:<4} |"
         f"{details}"
+        f"{segments_str}"
     )
     osc_client = context.get("osc_client")
     if osc_client:
