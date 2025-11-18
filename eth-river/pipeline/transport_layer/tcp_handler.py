@@ -4,16 +4,17 @@ from utils import format_output, get_nested_attr
 # 宛先ポート番号と担当ハンドラーの対応表
 APPLICATION_HANDLERS = {
     "dns": dns_handler,  # DNS over TCP
-    "http": http_handler, # HTTP over TCP
-    "tls": tls_handler
+    "http": http_handler,  # HTTP over TCP
+    "tls": tls_handler,
 }
 # TODO 再送や並び替えの処理の実装
+
 
 def process(packet, layers, context):
     """
     レイヤー4 (TCP) の処理。
     """
-    if not layers or layers[0].layer_name != "tcp":
+    if not layers or get_nested_attr(layers[0], "layer_name") != "tcp":
         print("This is not TCP packet")
         return
 
@@ -53,19 +54,25 @@ def process(packet, layers, context):
     # elif not syn and ack and not fin and not rst:
     #     protocol = "TCP-ACK"
     #     details = "4-way Handshake: ACK (Connection End Confirmed)"
+
     # RST (Reset)
     elif rst:
         protocol = "TCP-RST"
         details = "Connection Reset (RST)"
+
     if protocol is not None:
         # この処理はアプリケーション層がないので、パケット長と制御名だけ送ればOK
         format_output(context, protocol, details)
         return
 
-    # TCPセグメントの再構築結果の 'DATA' レイヤーをスキップする
+    # TCP再構築の 'DATA' レイヤーを軽量に処理してスキップ
     if layers and get_nested_attr(layers[0], "layer_name") == "DATA":
-        context["length"] = packet.DATA.tcp_reassembled_length # TCP再構築後のデータ長に更新
-        context["segments"] = str(packet.DATA.tcp_segments)  # セグメント数を追加
+        context["length"] = get_nested_attr(
+            packet, "DATA.tcp_reassembled_length"
+        )  # TCP再構築後のデータ長に更新
+        context["segments"] = str(
+            get_nested_attr(packet, "DATA.tcp_segments") or ""
+        )  # セグメント数を追加
         layers.pop(0)  # 'DATA' レイヤーをリストから削除
 
     if len(layers) == 0:
@@ -75,6 +82,10 @@ def process(packet, layers, context):
         if get_nested_attr(tcp_layer, "len") == "0":
             protocol = "TCP-ACK"
             details = "Pure ACK Packet"
+            format_output(context, protocol, details)
+        else:
+            protocol = "TCP"
+            details = f"No higher-layer; flags={get_nested_attr(tcp_layer, 'flags')}"
             format_output(context, protocol, details)
         return
 
