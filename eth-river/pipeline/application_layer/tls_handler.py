@@ -5,6 +5,7 @@ from utils import format_output, get_nested_attr, no_higher_layer
 def process(packet, layers, context):
     """
     レイヤー7 (TLS/SSL) の処理。
+    TLSレコードの連結は無視する。
     """
 
     # まず 'tls' レイヤー自体を取得
