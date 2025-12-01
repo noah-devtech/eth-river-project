@@ -1,5 +1,21 @@
 # Ethernet River Project
 
+## ドキュメント一覧
+
+### プロジェクト全体
+
+-   **[docs/summary.md](docs/summary.md)**: プロジェクト全体の概要・アーキテクチャ・横断的な設計方針
+-   **[docs/TODO.md](docs/TODO.md)**: プロジェクト全体の TODO リスト（全タスクの集約先）
+-   **[docs/DECISIONS.md](docs/DECISIONS.md)**: 重要な設計決定の履歴
+-   **[docs/CPU_thread.md](docs/CPU_thread.md)**: パフォーマンスとスレッドに関する考察
+
+### サブプロジェクト別開発ガイド
+
+-   **[docs/instructions_for_main.md](docs/instructions_for_main.md)**: マシン 1 (Python/pyshark) 専用開発ガイド
+-   **[docs/instructions_for_vis.md](docs/instructions_for_vis.md)**: マシン 3 (Processing/Java) 専用開発ガイド
+
+---
+
 ## 概要
 
 **Ethernet River** は、ネットワークパケットの流れを「光の川」としてリアルタイムに可視化するインタラクティブ・インスタレーションです。Raspberry Pi 4B/5 を用いた分散システムで、ネットワークトラフィックのキャプチャ・解析・送信・描画・物理的介入（Kinect）までを一貫して実現します。
