@@ -103,15 +103,51 @@ link_layer.py → network_layer.py → transport_layer/
 
 ### 未完了（次のタスク）
 
-| 優先度     | タスク                        | 担当                                                                                                               | 詳細                                                                                                                                                                                      |
-| :--------- | :---------------------------- | :----------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P2-1**   | **TCP ハンドシェイク処理**    | マシン 1<br>[`tcp_handler.py`](../eth_river/pipeline/transport_layer/tcp_handler.py)                               | アプリケーション層のチェックの**前**に、`tcp_layer.flags_syn`, `flags_fin`, `flags_rst` をチェックするロジックを追加する。専用の OSC メッセージ（例: `/packet/tcp_syn`）を送信する。      |
-| **P3-1**   | **QUIC プロトコルの実装**     | マシン 1<br>[`udp_handler.py`](../eth_river/pipeline/transport_layer/udp_handler.py),<br>`quic_handler.py`（新規） | QUIC の SNI (`packet.quic.sni` など) を取得するハンドラを作成し、`udp_handler` の辞書に登録する。                                                                                         |
-| **P3-Vis** | **TCP 制御パケットの可視化**  | マシン 3<br>`Main.java`                                                                                            | P2-1 で実装される `/packet/tcp_syn` などの OSC メッセージを受信し、色（白など）や寿命（短い）を変えて描画するロジックを追加する。                                                         |
-| **P2-II**  | **Kinect 環境構築**           | マシン 2（新規開発）                                                                                               | Kinect を Pi 4B に接続し、物体（石）や人物を認識して OSC を送信するプログラムの開発を開始する。                                                                                           |
-| **P2-III** | **Kinect OSC 受信スタブ作成** | マシン 3<br>`Main.java`                                                                                            | マシン 2 からの OSC（仮仕様: `/kinect/object` @ `12346`）を受信する `oscP5.plug()` と、コールバック関数（例: `kinectObjectEvent()`）を実装する。                                          |
-| **P2-IV**  | **「介入」ロジック実装**      | マシン 3<br>`Main.java`<br>(`Particle` クラス)                                                                     | P2-III で受信した「石」の座標（X, Y）を `Particle` クラスの `update()` に渡し、粒子がその座標を避ける、または引き寄せられる（「ダム」「磁石」）ロジックを実装する。                       |
-| **P3-Sim** | **シミュレーション高度化**    | マシン 3<br>`Particle` クラス                                                                                      | `Particle` クラスに「加速度 (`PVector acc`)」と `applyForce(PVector force)` メソッドを追加し、粒子同士が反発する力や、Kinect の座標に反応する力を計算するロジック（レベル 3）を実装する。 |
+-   **P2-1: TCP ハンドシェイク処理**
+
+    -   担当: マシン 1 [`tcp_handler.py`](../eth_river/pipeline/transport_layer/tcp_handler.py)
+    -   アプリケーション層のチェックの**前**に、`tcp_layer.flags_syn`, `flags_fin`, `flags_rst` をチェックするロジックを追加する。専用の OSC メッセージ（例: `/packet/tcp_syn`）を送信する。
+
+-   **P3-1: QUIC プロトコルの実装**
+
+    -   担当: マシン 1 [`udp_handler.py`](../eth_river/pipeline/transport_layer/udp_handler.py), `quic_handler.py`（新規）
+    -   QUIC の SNI (`packet.quic.sni` など) を取得するハンドラーを作成し、`udp_handler` の辞書に登録する。
+
+-   **P3-Vis: TCP 制御パケットの可視化**
+
+    -   担当: マシン 3 `Main.java`
+    -   P2-1 で実装される `/packet/tcp_syn` などの OSC メッセージを受信し、色（白など）や寿命（短い）を変えて描画するロジックを追加する。
+
+-   **P2-II: Kinect 環境構築**
+
+    -   担当: マシン 2（新規開発）
+    -   Kinect を Pi 4B に接続し、物体（石）や人物を認識して OSC を送信するプログラムの開発を開始する。
+
+-   **P2-III: Kinect OSC 受信スタブ作成**
+
+    -   担当: マシン 3 `Main.java`
+    -   マシン 2 からの OSC（仮仕様: `/kinect/object` @ `12346`）を受信する `oscP5.plug()` と、コールバック関数（例: `kinectObjectEvent()`）を実装する。
+
+-   **P2-IV: 「介入」ロジック実装**
+
+    -   担当: マシン 3 `Main.java` (`Particle` クラス)
+    -   P2-III で受信した「石」の座標（X, Y）を `Particle` クラスの `update()` に渡し、粒子がその座標を避ける、または引き寄せられる（「ダム」「磁石」）ロジックを実装する。
+
+-   **P3-Sim: シミュレーション高度化**
+
+    -   担当: マシン 3 `Particle` クラス
+    -   `Particle` クラスに「加速度 (`PVector acc`)」と `applyForce(PVector force)` メソッドを追加し、粒子同士が反発する力や、Kinect の座標に反応する力を計算するロジック（レベル 3）を実装する。
+
+-   [ ] ノードベース可視化システムの実装
+
+    -   ノード間の通信を粒子で表現し、川の流れのようなビジュアライゼーションを目指す。
+    -   ローカルネットワーク（右側）とインターネット（左側）を分けて表示。
+    -   参考: [docs/ideas/node-flow-idea.md](docs/ideas/node-flow-idea.md)
+
+-   [ ] 粒子のビジュアル表現・群知能アルゴリズムの実装
+    -   粒子を有機的に動かし、加算合成やトレイル、パケットサイズに応じたスケーリング・輝度調整を行う。
+    -   Boids アルゴリズムやベジェ曲線、力場による移動を検討。
+    -   参考: [docs/ideas/particle-idea.md](docs/ideas/particle-idea.md)
 
 ---
 
