@@ -1,32 +1,34 @@
-# プロジェクト「Ethernet リバー」AI 向け引き継ぎサマリー
+# マシン 1 (Python/pyshark) 開発ガイド
 
-## 1. プロジェクトの目的とゴール
-
--   **目的**: ネットワークトラフィック（パケット）をリアルタイムで可視化するインタラクティブ・インスタレーションの制作。
--   **ゴール**:
-    1.  **キャプチャ**: Raspberry Pi でネットワークブリッジを構築し、`pyshark` を使って全パケットをキャプチャする。
-    2.  **解析**: キャプチャしたパケットをプロトコル（HTTP, HTTPS/TLS, DNS, QUIC, TCP Handshake）ごとに分類し、宛先ドメイン(SNI)や方向性（上り/下り）を特定する。
-    3.  **送信**: 解析したメタデータ（プロトコル名、パケット長、方向、ドメイン名）を OSC で描画用マシンにリアルタイム送信する。
-    4.  **可視化**: Processing で OSC データを受信し、パケットを「光の川」として描画する。プロトコルで色、パケット長でサイズ、方向で流れ（上り/下り）を変える。
-    5.  **介入**: Kinect（マシン 2）で物理的な「石」や「来場者」を認識し、その座標を OSC で送信。Processing 側でその情報を受け取り、川の流れ（パーティクルの挙動）に影響を与える。
+> このファイルは **マシン 1 (`eth_river/` ディレクトリ)** の開発・運用・設計指針を記載した、サブプロジェクト専用のドキュメントです。
+> プロジェクト全体の概要や他のマシンの情報は [docs/summary.md](summary.md) を参照してください。
 
 ---
 
-## 2. 主要な技術スタック
+## 1. マシン 1 の役割と責務
 
--   **アーキテクチャ**: 3 台の Raspberry Pi による分散処理
-    -   **マシン 1 (pyshark)**: RPi 4B - 透過型 L2 ブリッジ（`br0`） + Wi-Fi（`wlan0`）管理 I/F
-    -   **マシン 2 (Kinect)**: RPi 4B - （未着手）
-    -   **マシン 3 (Processing)**: RPi 5 - 描画・シミュレーション担当
--   **マシン 1 (pyshark / `eth-river` フォルダ)**
-    -   **言語**: Python 3
-    -   **ライブラリ**: `pyshark`, `python-osc`
-    -   **設定**: `use_json=False`（デフォルトの XML/PDML パーサーを使用）, `tcp.desegment_tcp_streams=TRUE`
--   **マシン 3 (Processing / `eth_river_vis` フォルダ)**
-    -   **言語**: Java (Processing 4)
-    -   **ライブラリ**: `oscP5`
-    -   **ビルド**: Gradle
--   **通信**: **OSC** (マシン 1→3, マシン 2→3)
+**役割**: パケットキャプチャ・プロトコル解析・OSC 送信
+
+**ハードウェア**: Raspberry Pi 4B
+
+**主要な処理フロー**:
+
+1. 透過型 L2 ブリッジ（`br0`）上で全パケットをキャプチャ
+2. `pyshark`でプロトコル層ごとに解析（HTTP, HTTPS/TLS, DNS, QUIC, TCP 制御パケット等）
+3. 宛先ドメイン（SNI）や通信方向を特定
+4. 解析したメタデータを`python-osc`でマシン 3 へリアルタイム送信
+
+---
+
+## 2. 技術スタックと主要ライブラリ
+
+-   **言語**: Python 3.12+
+-   **主要ライブラリ**:
+    -   `pyshark`: パケットキャプチャと解析（`tshark`のラッパー）
+    -   `python-osc`: OSC メッセージの送信
+-   **重要な設定**:
+    -   `use_json=False` (デフォルトの XML/PDML パーサーを使用)
+    -   `tcp.desegment_tcp_streams=TRUE` (TCP 再アセンブリを有効化)
 
 ---
 
@@ -70,15 +72,89 @@
 -   **属性アクセス**: `pyshark` の `packet` オブジェクトへのアクセスは、`utils.py` にある `get_nested_attr()` で統一する。これにより、フィールド/属性の違いを意識せず、`None` 安全なアクセスが可能。
 -   **TCP 再アセンブリ**: `pyshark` で `tcp.desegment_tcp_streams=TRUE` を有効にする。`tcp_handler` は `DATA` レイヤー の存在を考慮する必要がある。
 -   **ローカル IP 判定**: `Main.java` 側で、`localNetPrefix` 変数（ハードコーディング）と `ip.startsWith()` を使って方向（Upstream/Downstream）を判定する。
--   **パーティクル削除**: Processing の `ArrayList` からパーティクルを削除する際は、インデックスのずれを防ぐため、`for` ループで**逆順**（`i = list.size() - 1` から）に処理する。
--   **リクエスト/レスポンス**: 「待ち」は実装せず、キャプチャした瞬間に即時粒子を発生させる。
+-   **リクエスト/レスポンスの待機**: 「待ち」は実装せず、キャプチャした瞬間に即時 OSC 送信する。
 
 ---
 
-## 5. 現在抱えている課題や懸念点
+## 5. OSC 送信仕様（マシン 3 向け）
 
--   **`tcp_handler.py` の実装**: `tcp_handler.py` が P2（ハンドシェイク）未実装のままであり、最優先で修正が必要。
--   **Kinect 開発**: マシン 2（Kinect）の開発が未着手。RPi 4B と Kinect の連携（ドライバ、CV 処理）がスムーズに進むか未検証。
--   **Processing のパフォーマンス**: RPi 5 で、多数のパーティクル（P1）＋高度な物理演算（P3-Sim）＋ Kinect からの OSC データ（P2-III）を同時に処理した際のフレームレートが未知数。
--   **未処理プロトコル**: `test.txt` にある `DATA`, `STUN` などの未定義プロトコルをどう扱うか（無視するか、`default_handler` で処理するか）の方針が未定。
--   **TODO コメント**: `dns_handler.py` と `tcp_handler.py` に、過去のデバッグ用 TODO やリファクタリング TODO が残っている。
+**送信先**: マシン 3（デフォルト `TARGET_IP = "127.0.0.1"`）  
+**ポート**: `12345`  
+**アドレス**: `/packet/{protocol_name}` (例: `/packet/dns`, `/packet/tls_hello`)
+
+**引数（順序固定）**:
+
+1. `String`: プロトコル名 (例: "DNS", "TLS-Hello")
+2. `int`: パケット長 (例: 120)
+3. `String`: 詳細 (例: "SNI: google.com")
+4. `String`: 送信元 IP (例: "192.168.11.50")
+5. `String`: 宛先 IP (例: "1.1.1.1")
+
+**重要**: `main.py`の`TARGET_IP`は開発・テスト用の設定。**本番環境ではマシン 3 の IP アドレスに書き換え必須**。
+
+---
+
+## 6. 開発時の注意点とベストプラクティス
+
+### 6.1 パフォーマンス重視の実装
+
+-   `pyshark`の`sniff_continuously()`は**シングルスレッド**で動作
+-   高トラフィック下では CPU がボトルネックとなり**パケットロスのリスク**
+-   `main.py`のメインループ内や、パイプライン処理は**極めて軽量**に保つ必要がある
+-   重い処理（ログ出力、複雑な文字列操作等）は最小限に
+
+### 6.2 属性アクセスの統一
+
+-   `pyshark`の`packet`オブジェクトへのアクセスは**必ず**`utils.get_nested_attr()`を使用
+-   フィールド/属性の違いを意識せず、None 安全なアクセスが可能
+
+```python
+# 例
+sni = get_nested_attr(packet.tls, "handshake_extensions_server_name")
+```
+
+### 6.3 TCP 再アセンブリの考慮
+
+-   `tcp.desegment_tcp_streams=TRUE`により、`DATA`レイヤーが存在する場合がある
+-   `tcp_handler.py`では`DATA`レイヤーの存在を考慮した処理が必要
+
+### 6.4 未定義プロトコルの扱い
+
+-   `DATA`, `STUN`等の未定義プロトコルは現状`default_handler`で処理または無視
+-   必要に応じて専用ハンドラを追加
+
+---
+
+## 7. 現在の課題と今後の方針
+
+### 最優先課題
+
+-   **TCP 制御パケット処理（P2-1）**: `tcp_handler.py`で SYN/FIN/RST フラグの検出が未実装
+-   **パフォーマンス最適化**: CPU 使用率の削減、パケットロス対策
+
+### 今後の拡張
+
+-   **QUIC 対応（P3-1）**: `quic_handler.py`の新規作成と SNI 取得
+-   **コード保守性向上**: 残存する TODO コメントの解消、リファクタリング
+
+詳細な TODO リストは [docs/TODO.md](TODO.md) を参照してください。
+
+---
+
+## 8. ビルド・実行方法
+
+```bash
+cd eth_river
+python -m pip install -r requirements.txt
+python main.py
+```
+
+---
+
+## 9. 関連ドキュメント
+
+-   [docs/summary.md](summary.md): プロジェクト全体サマリー
+-   [docs/instructions_for_vis.md](instructions_for_vis.md): マシン 3 開発ガイド
+-   [docs/TODO.md](TODO.md): 全体 TODO リスト
+-   [docs/DECISIONS.md](DECISIONS.md): 設計決定履歴
+-   [docs/CPU_thread.md](CPU_thread.md): パフォーマンス考察
