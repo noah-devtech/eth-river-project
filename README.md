@@ -1,110 +1,131 @@
-# eth_river_vis
+# Ethernet River Project
 
 ## 概要
 
-eth_river_vis は、受信したネットワークパケットを「流れる粒子」として可視化する小さな Java/Processing スケッチです。UDP ポートで OSC（Open Sound Control）メッセージを受信し、そのメッセージに含まれるパケットのメタデータに基づいて粒子の色や大きさを決定し、生成します。想定されている OSC 送信元は外部の Python スクリプト（コード内コメントで「pyshark (main.py)」と記載）ですが、このリポジトリには含まれていません。
+**Ethernet River** は、ネットワークパケットの流れを「光の川」としてリアルタイムに可視化するインタラクティブ・インスタレーションです。Raspberry Pi 4B/5 を用いた分散システムで、ネットワークトラフィックのキャプチャ・解析・送信・描画・物理的介入（Kinect）までを一貫して実現します。
 
-## 技術スタック / 依存関係
+---
 
--   言語: Java
--   ビルドツール: Gradle（Wrapper 同梱）＋ Kotlin DSL ビルドスクリプト
-    -   Gradle Wrapper: 8.14（gradle/wrapper/gradle-wrapper.properties を参照）
--   可視化フレームワーク: Processing Core 4.3.4（org.processing:core）
--   OSC ライブラリ: oscP5 0.9.8（de.sojamo:oscp5）
--   テストフレームワーク: JUnit 5（依存関係はあるが、現状テストは未収録）
+## システム構成
 
-## エントリポイント
+| マシン       | 役割                     | ディレクトリ                       | 主な技術                          |
+| :----------- | :----------------------- | :--------------------------------- | :-------------------------------- |
+| **マシン 1** | パケット解析・OSC 送信   | [`eth_river/`](eth_river/)         | Python 3.12+, pyshark, python-osc |
+| **マシン 2** | Kinect 認識・OSC 送信    | （未着手）                         | Python, OpenCV, python-osc 予定   |
+| **マシン 3** | 可視化・シミュレーション | [`eth_river_vis/`](eth_river_vis/) | Java 17, Processing 4, oscP5      |
 
--   メインクラス: Main
--   起動方法: Processing の PApplet エントリポイント（PApplet.main("Main")）
--   ソース: src/main/java/Main.java
+---
 
-## 実行時の挙動
+## 体験の流れ
 
--   ウィンドウ（800x600）を開き、下方向に漂う粒子を描画します。
--   UDP ポート 12345 で受信する OSC メッセージを待ち受けます。
--   受信した OSC メッセージから（protocol, length, details, source IP, destination IP）を取り出してデバッグ表示し、プロトコル種別に応じた色、パケット長に応じた大きさの粒子を生成します。
+1. **キャプチャ**  
+   マシン 1（Raspberry Pi 4B）がネットワークブリッジ上で全パケットをキャプチャ。
+2. **解析**  
+   パケットをプロトコル（HTTP, HTTPS/TLS, DNS, QUIC, TCP ハンドシェイク等）ごとに分類し、SNI や方向性（上り/下り）を特定。
+3. **送信**  
+   解析したメタデータ（プロトコル名、パケット長、方向、ドメイン名等）を OSC でマシン 3 へ即時送信。
+4. **可視化**  
+   マシン 3（Raspberry Pi 5）が Processing で OSC データを受信し、パケットを「光の川」として描画。プロトコルで色、パケット長でサイズ、方向で流れを変化。
+5. **介入**  
+   マシン 2（Kinect）が物理的な「石」や来場者を認識し、その座標を OSC で送信。マシン 3 で川の流れ（パーティクル挙動）に影響を与える。
 
-## プロジェクト構成
+---
 
--   build.gradle.kts — Gradle ビルド（Kotlin DSL）。Processing と oscP5 の依存関係、および JUnit プラットフォームを宣言。
--   settings.gradle.kts — プロジェクト名の設定。
--   gradlew / gradlew.bat — Gradle Wrapper ランチャ（Unix/Windows）。
--   gradle/wrapper/\* — Gradle Wrapper の設定とバイナリ。
--   src/main/java/Main.java — Processing スケッチ本体および OSC リスナー/可視化ロジック。
+## ディレクトリ構成
 
-## 要件
+```
+eth_river/         # マシン1: パケットキャプチャ・解析・OSC送信 (Python)
+eth_river_vis/     # マシン3: 可視化・シミュレーション (Java/Processing)
+docs/              # 技術仕様・設計・運用ドキュメント
+.github/           # Copilot/CI用設定
+```
 
--   Java Development Kit（JDK）:
-    -   推奨: JDK 17 以上（Gradle 8.x は 17/21 と相性良好）。ツールチェーンの問題が出る場合は、まず JDK 17 を試してください。
--   依存関係の取得のためのインターネット接続（Maven Central, jogamp, clojars）。
--   このスケッチに対して UDP 12345 に互換な OSC メッセージを送信する送信元。
-    -   コードコメントでは pyshark を用いた Python スクリプトに言及していますが、本リポジトリには含まれていません。
+---
 
-## セットアップ
+## ビルド・実行方法
 
-1. 対応する JDK をインストールし、PATH に通っていることを確認します（java -version）。
-2. 本リポジトリをクローンします。
-3. ビルドには Gradle Wrapper を使用してください（ローカルに Gradle を入れる必要はありません）。
+### マシン 1（パケット解析: Python）
 
-## ビルドと実行
+```sh
+cd eth_river
+python -m pip install -r requirements.txt
+python main.py
+```
 
-ビルド（コンパイルとテスト実行）:
+-   `main.py` の `TARGET_IP` は本番時にマシン 3 の IP へ変更必須。
 
--   Windows: .\gradlew.bat build
--   macOS/Linux: ./gradlew build
+### マシン 3（可視化: Java/Processing）
 
-アプリの実行:
+```sh
+cd eth_river_vis
+./gradlew build
+# IDEで Main クラスを実行、または ./gradlew run (要 applicationプラグイン)
+```
 
--   Gradle の application プラグインは未設定のため、現時点では gradlew run タスクはありません。
--   推奨: IDE（IntelliJ IDEA など）でプロジェクトを開き、Main クラスを直接実行してください。
-    -   Main は Processing スケッチであり、実行すると PApplet のウィンドウが起動します。
+-   UDP ポート 12345 で OSC メッセージを受信し、パーティクルを描画。
 
-## アプリへの OSC データ入力
+---
 
--   既定では UDP ポート 12345 をリッスンします。
--   少なくとも次の 5 つの引数をこの順番で持つ OSC メッセージを想定しています:
-    1. protocol（String）, 2) length（int）, 3) details（String）, 4) source IP（String）, 5) destination IP（String）
--   受信メッセージから取得したアドレス（lastAddress）を表示しますが、コード上で特定のアドレスパターンを強制はしていません。
+## OSC 通信仕様
 
-## 環境変数と設定
+-   **マシン 1 → マシン 3**
 
--   現状、このコードで定義・使用している環境変数はありません。
--   OSC の受信ポートは Main.java 内でハードコードされています（listenPort = 12345）。
--   TODO: 受信ポート（および色/サイズのマッピング等）を、環境変数・CLI 引数・設定ファイルなどで変更可能にする。
+    -   ポート: 12345
+    -   アドレス: `/packet/{protocol_name}`
+    -   引数:
+        1. `String` プロトコル名
+        2. `int` パケット長
+        3. `String` 詳細（例: SNI）
+        4. `String` 送信元 IP
+        5. `String` 宛先 IP
 
-## Gradle スクリプトと便利なタスク
+-   **マシン 2 → マシン 3**（予定）
+    -   ポート: 12346
+    -   アドレス: `/kinect/object`
+    -   引数: `int` (ID), `float` (x), `float` (y), `float` (angle)
 
--   gradlew / gradlew.bat — ローカルに Gradle を入れずに呼び出せる Wrapper スクリプト。
--   主なタスク:
-    -   build — コンパイルおよびテスト実行。
-    -   test — ユニットテストの実行（現状テストは未収録）。
-    -   clean — ビルド成果物の削除。
+---
 
-## テスト
+## 開発・設計のポイント
 
--   本プロジェクトは JUnit 5 の依存関係を含みますが、現状テストソースはありません。
--   TODO: src/test/java 配下にテストを追加し、以下で実行:
-    -   Windows: .\gradlew.bat test
-    -   macOS/Linux: ./gradlew test
+-   **リアルタイム性重視**: パケットキャプチャから描画までの遅延を最小化。
+-   **分散処理**: 3 台の Raspberry Pi が OSC で連携。
+-   **パフォーマンス最適化**:
+    -   Python 側は`pyshark`の XML パース負荷を軽減するため、`use_ek=True`（EK JSON モード）推奨。
+    -   Processing 側はパーティクル削除を逆順ループで行い、描画負荷を抑制。
+-   **属性アクセスの統一**: Python 側は`utils.get_nested_attr()`で None 安全なアクセスを徹底。
+-   **未定義プロトコル**: DATA, STUN 等は現状`default_handler`で処理または無視。
 
-## 開発メモ
+---
 
--   Processing 連携: Processing Core を通常の Java 依存として利用しており、Processing IDE は不要です。一般的な Java IDE からスケッチを実行できます。
--   OSC メッセージ: oscP5 により処理されます。メッセージ解析中のエラーはコンソールにログ出力されます。
+## 現状の ToDo・課題
 
-## トラブルシューティング
+-   [ ] **TCP ハンドシェイクの OSC 送信**（`tcp_handler.py`で SYN/FIN/RST 検出）
+-   [ ] **QUIC プロトコル対応**（SNI 取得・可視化）
+-   [ ] **Kinect 連携の実装**（OSC 受信スタブ・介入ロジック）
+-   [ ] **パフォーマンス検証・最適化**（CPU 負荷・フレームレート）
+-   [ ] **コードの TODO/デバッグ残骸の整理**（保守性向上）
 
--   何も表示されない／すぐ終了する: Main クラス（Processing の PApplet エントリ）を起動しているか確認してください。存在しない Gradle の run タスクを実行しようとしていないか注意。
--   粒子が出ない: 同一マシンの UDP 12345 に向けて OSC 送信が行われているか、またファイアウォールで当該ポートの UDP 受信が許可されているか確認してください。
--   依存解決に失敗する: ネットワーク接続状況と JDK の互換性を確認してください（JDK 17 を試す）。
+---
+
+## 参考ドキュメント
+
+-   [docs/summary.md](docs/summary.md): プロジェクト全体サマリー
+-   [docs/instructions_for_main.md](docs/instructions_for_main.md): マシン 1（pyshark）開発ガイド
+-   [docs/instructions_for_vis.md](docs/instructions_for_vis.md): マシン 3（Processing）開発ガイド
+-   [docs/CPU_thread.md](docs/CPU_thread.md): パフォーマンス考察
+-   [docs/DECISIONS.md](docs/DECISIONS.md): 設計決定履歴
+
+---
 
 ## ライセンス
 
--   本リポジトリには LICENSE ファイルが存在しません。
--   TODO: ライセンスファイルを追加し、ここに採用ライセンスを明記してください。
+-   本リポジトリには LICENSE ファイルが存在しません。必要に応じて追加してください。
+
+---
 
 ## 謝辞
 
 -   Processing — The Processing Foundation
--   oscP5 — Andreas Schlegel（de.sojamo:oscp5）
+-   oscP5 — Andreas Schlegel
+-   PyShark — Kimi Newt
