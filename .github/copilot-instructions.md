@@ -59,3 +59,12 @@ Copilot によるコード提案は、以下の**未完了タスク**と**懸念
 
 -   **言語**: Python 3.12 以降の環境で動作するコードを提案すること。
 -   **リファクタリング**: `dns_handler.py` や `tcp_handler.py` などに残っている過去のデバッグ用 TODO やリファクタリング TODO の解消を促す、保守性の高いコードを提案すること。
+
+## 5. 参考ドキュメント
+
+-   [`docs/summary.md`](summary.md): プロジェクト全体の技術スタックと設計概要
+-   [`docs/instructions_for_main.md`](instructions_for_main.md): マシン 1 (pyshark) の詳細な開発ガイド
+-   [`docs/instructions_for_vis.md`](instructions_for_vis.md): マシン 3 (Processing) の詳細な開発ガイド
+-   [`docs/DECISIONS.md`](DECISIONS.md): アーキテクチャ設計の経緯と決定事項
+-   [`docs/CPU_thread.md`](CPU_thread.md): パフォーマンスとスレッドに関する考察
+-   [`docs/TEST_DATA.md`](TEST_DATA.md): テストデータの仕様
