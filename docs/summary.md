@@ -1,5 +1,22 @@
 # プロジェクト「Ethernet リバー」全体サマリー
 
+このファイルは人間の開発者向けトップサマリーです。AI 向けの詳細なコーディング指示や最新の優先タスクは `.github/copilot-instructions.md` を参照してください（役割分担により詳細は AI ドキュメント側へ集約）。
+
+関連: `.github/copilot-instructions.md`（AI 向けコーディング指示）
+
+> このファイルはプロジェクト全体の目的・構成・横断的な設計方針をまとめた**トップレベルのサマリー**です。
+> 各サブプロジェクトの詳細な開発ガイドは以下を参照してください。
+
+## サブプロジェクト別ドキュメント
+
+-   **マシン 1 (Python/pyshark)**: [docs/instructions_for_main.md](instructions_for_main.md)
+-   **マシン 3 (Processing/Java)**: [docs/instructions_for_vis.md](instructions_for_vis.md)
+-   **全体 TODO リスト**: [docs/TODO.md](TODO.md)
+-   **設計決定履歴**: [docs/DECISIONS.md](DECISIONS.md)
+-   **パフォーマンス考察**: [docs/CPU_thread.md](CPU_thread.md)
+
+---
+
 ## 1. プロジェクトの目的とゴール
 
 **目的**: ネットワークトラフィック（パケット）をリアルタイムで可視化するインタラクティブ・インスタレーションの制作。
@@ -89,29 +106,25 @@ link_layer.py → network_layer.py → transport_layer/
 
 ---
 
-## 3. 現状の ToDo リストと進捗
+## 3. 現状の進捗と課題
 
-### 完了済み（P0/P1）
+### 完了済み（主要マイルストーン）
 
--   ✅ **[マシン 1]** `pyshark`パイプライン構築（`link_layer` → `network_layer` → `transport_layer`）
--   ✅ **[マシン 1]** `tls_handler` での SNI 取得（`get_nested_attr(packet.tls, "handshake_extensions_server_name")`）に成功
--   ✅ **[マシン 1]** OSC 送信機能の実装（[`utils.py`](../eth_river/utils.py) の `format_output`）
--   ✅ **[マシン 3]** OSC 受信機能の実装（`oscEvent`）
--   ✅ **[マシン 3]** パーティクルシステムの基本実装（レベル 1：粒子が流れる）
--   ✅ **[マシン 3]** 通信方向（Upstream/Downstream）の判定と描画（上下両方から発生）の実装
--   ✅ **[マシン 3]** 安全なパーティクル削除（逆順ループで `ArrayList` から削除）
+-   ✅ **[マシン 1]** pyshark パイプライン構築と OSC 送信機能の実装
+-   ✅ **[マシン 1]** TLS SNI 取得の実装
+-   ✅ **[マシン 3]** OSC 受信とパーティクルシステムの基本実装
+-   ✅ **[マシン 3]** 通信方向判定と安全な削除ロジックの実装
 
-### 未完了（次のタスク）
+### 主要な未完了タスク
 
-| 優先度     | タスク                        | 担当                                                                                                               | 詳細                                                                                                                                                                                      |
-| :--------- | :---------------------------- | :----------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P2-1**   | **TCP ハンドシェイク処理**    | マシン 1<br>[`tcp_handler.py`](../eth_river/pipeline/transport_layer/tcp_handler.py)                               | アプリケーション層のチェックの**前**に、`tcp_layer.flags_syn`, `flags_fin`, `flags_rst` をチェックするロジックを追加する。専用の OSC メッセージ（例: `/packet/tcp_syn`）を送信する。      |
-| **P3-1**   | **QUIC プロトコルの実装**     | マシン 1<br>[`udp_handler.py`](../eth_river/pipeline/transport_layer/udp_handler.py),<br>`quic_handler.py`（新規） | QUIC の SNI (`packet.quic.sni` など) を取得するハンドラを作成し、`udp_handler` の辞書に登録する。                                                                                         |
-| **P3-Vis** | **TCP 制御パケットの可視化**  | マシン 3<br>`Main.java`                                                                                            | P2-1 で実装される `/packet/tcp_syn` などの OSC メッセージを受信し、色（白など）や寿命（短い）を変えて描画するロジックを追加する。                                                         |
-| **P2-II**  | **Kinect 環境構築**           | マシン 2（新規開発）                                                                                               | Kinect を Pi 4B に接続し、物体（石）や人物を認識して OSC を送信するプログラムの開発を開始する。                                                                                           |
-| **P2-III** | **Kinect OSC 受信スタブ作成** | マシン 3<br>`Main.java`                                                                                            | マシン 2 からの OSC（仮仕様: `/kinect/object` @ `12346`）を受信する `oscP5.plug()` と、コールバック関数（例: `kinectObjectEvent()`）を実装する。                                          |
-| **P2-IV**  | **「介入」ロジック実装**      | マシン 3<br>`Main.java`<br>(`Particle` クラス)                                                                     | P2-III で受信した「石」の座標（X, Y）を `Particle` クラスの `update()` に渡し、粒子がその座標を避ける、または引き寄せられる（「ダム」「磁石」）ロジックを実装する。                       |
-| **P3-Sim** | **シミュレーション高度化**    | マシン 3<br>`Particle` クラス                                                                                      | `Particle` クラスに「加速度 (`PVector acc`)」と `applyForce(PVector force)` メソッドを追加し、粒子同士が反発する力や、Kinect の座標に反応する力を計算するロジック（レベル 3）を実装する。 |
+詳細な TODO は **[docs/TODO.md](TODO.md)** を参照。優先度や具体的な実装ガイドは重複防止のため **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** に集約しています。
+
+主要な未完了タスク:
+
+-   TCP ハンドシェイク処理の実装（P2-1）
+-   QUIC プロトコル対応（P3-1）
+-   Kinect 連携の実装（P2-II/P2-III/P2-IV）
+-   ノードベース可視化システムの設計・実装（P4-NodeVis）
 
 ---
 
@@ -216,10 +229,16 @@ cd eth_river_vis
 
 ---
 
-## 7. 参考ドキュメント
+## 7. 関連ドキュメント
 
--   [`docs/instructions_for_main.md`](instructions_for_main.md): マシン 1 (pyshark) の詳細な開発ガイド
--   [`docs/instructions_for_vis.md`](instructions_for_vis.md): マシン 3 (Processing) の詳細な開発ガイド
--   [`docs/DECISIONS.md`](DECISIONS.md): アーキテクチャ設計の経緯と決定事項
--   [`docs/CPU_thread.md`](CPU_thread.md): パフォーマンスとスレッドに関する考察
--   [`docs/TEST_DATA.md`](TEST_DATA.md): テストデータの仕様
+### サブプロジェクト開発ガイド
+
+-   [instructions_for_main.md](instructions_for_main.md): マシン 1 (Python/pyshark) 開発ガイド
+-   [instructions_for_vis.md](instructions_for_vis.md): マシン 3 (Processing/Java) 開発ガイド
+
+### 設計・運用ドキュメント
+
+-   [TODO.md](TODO.md): プロジェクト全体の TODO リスト
+-   [DECISIONS.md](DECISIONS.md): アーキテクチャ設計の決定履歴
+-   [CPU_thread.md](CPU_thread.md): パフォーマンスとスレッドに関する考察
+-   [TEST_DATA.md](TEST_DATA.md): テストデータの仕様
