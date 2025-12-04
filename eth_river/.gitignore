@@ -1,14 +1,18 @@
-# Python Caches
+# Python build and cache
 __pycache__/
-.mypy_cache/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
 
-# Virtual Environment (venv)
-venv/
+# Virtual environments
 .venv/
+venv/
+ENV/
 
-# OS specific
+# OS files
 .DS_Store
+Thumbs.db
 
+# Test data (if any)
 test-data/
-.vscode/
