@@ -1,5 +1,9 @@
 # プロジェクト「Ethernet リバー」AI インストラクション
 
+このドキュメントは GitHub Copilot（AI）向けのコーディング指示・優先事項・制約の集約です。人間向けの全体像・設計方針は `docs/summary.md` を参照してください（役割分担のため重複は避けています）。
+
+関連: `../docs/summary.md`（人間向けトップサマリー）
+
 ## 1. プロジェクトのゴールと最優先事項
 
 **目的**: ネットワークパケットをリアルタイムで可視化するインタラクティブ・インスタレーションの制作。
@@ -43,6 +47,22 @@ Copilot によるコード提案は、以下の**未完了タスク**と**懸念
 -   **QUIC (P3-1)**: QUIC プロトコルの実装と SNI (`packet.quic.sni`など) 取得のためのハンドラ作成。
 -   **可視化 (P3-Vis)**: TCP 制御パケット (SYN/FIN/RST など) 受信時の描画ロジック（色、寿命）を Processing 側に追加することを提案すること。
 -   **Kinect (P2-II/P2-III)**: マシン 2 の Kinect 連携（物体座標を OSC でマシン 3 に送信）の実装。
+-   **ノードベース可視化システム (P4-NodeVis)**:
+    -   **目的**: sourceIP/destinationIP をノードとして扱い、ノード間の通信を粒子（パーティクル）で表現する「川の流れ」的なビジュアライゼーションシステムの実装。
+    -   **レイアウト**: 画面右側にローカルネットワークのノード（例: 192.168.x.x）、画面左側にインターネット側のノード（例: 8.8.8.8 など）を配置。
+    -   **パーティクルシステム**:
+        -   各パケットごとに sourceIP→destinationIP へ向かうパーティクルを生成。
+        -   パーティクルの軌道（path）は描画せず、粒子のみを可視化。
+        -   粒子は直線的には進まず、周囲の粒子と相互作用（引力・斥力、Boids アルゴリズムなど）しながら進行。
+        -   同じノード間の通信が多いほど粒子が密集し、「川の流れ」のように太く見える。
+    -   **合流・分岐の表現**:
+        -   複数のノードからの流れが途中で合流し、大きな流れを形成。
+        -   その後、流れが枝分かれして各目的ノードへ向かう様子を自然に表現。
+    -   **実装方針**:
+        -   Processing (Java) 側でノード管理とパーティクルシステムを実装。
+        -   OSC で受信した sourceIP/destinationIP に基づき、ノードの自動生成・配置。
+        -   パーティクルの動きには Boids アルゴリズム（Separation, Alignment, Cohesion）や Perlin ノイズベースの方向変化を使用。
+        -   ノードは円や点で表現し、位置は固定または動的配置を検討。
 
 ### 3.3. 懸念点への配慮
 
@@ -60,11 +80,11 @@ Copilot によるコード提案は、以下の**未完了タスク**と**懸念
 -   **言語**: Python 3.12 以降の環境で動作するコードを提案すること。
 -   **リファクタリング**: `dns_handler.py` や `tcp_handler.py` などに残っている過去のデバッグ用 TODO やリファクタリング TODO の解消を促す、保守性の高いコードを提案すること。
 
-## 5. 参考ドキュメント
+## 5. 参考ドキュメント（優先順）
 
--   [`docs/summary.md`](summary.md): プロジェクト全体の技術スタックと設計概要
--   [`docs/instructions_for_main.md`](instructions_for_main.md): マシン 1 (pyshark) の詳細な開発ガイド
--   [`docs/instructions_for_vis.md`](instructions_for_vis.md): マシン 3 (Processing) の詳細な開発ガイド
--   [`docs/DECISIONS.md`](DECISIONS.md): アーキテクチャ設計の経緯と決定事項
--   [`docs/CPU_thread.md`](CPU_thread.md): パフォーマンスとスレッドに関する考察
--   [`docs/TEST_DATA.md`](TEST_DATA.md): テストデータの仕様
+-   [`docs/summary.md`](../docs/summary.md): 人間向けトップサマリー（全体像・設計方針）
+-   [`docs/instructions_for_main.md`](../docs/instructions_for_main.md): マシン 1 (pyshark) 開発ガイド
+-   [`docs/instructions_for_vis.md`](../docs/instructions_for_vis.md): マシン 3 (Processing) 開発ガイド
+-   [`docs/DECISIONS.md`](../docs/DECISIONS.md): アーキテクチャ設計の決定履歴
+-   [`docs/CPU_thread.md`](../docs/CPU_thread.md): パフォーマンスとスレッドに関する考察
+-   [`docs/TEST_DATA.md`](../docs/TEST_DATA.md): テストデータの仕様
