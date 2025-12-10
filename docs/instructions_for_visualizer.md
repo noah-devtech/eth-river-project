@@ -1,6 +1,6 @@
 # マシン 3 (Processing/Java) 開発ガイド
 
-> このファイルは **マシン 3 (`eth_river_vis/` ディレクトリ)** の開発・運用・設計指針を記載した、サブプロジェクト専用のドキュメントです。
+> このファイルは **マシン 3 (`visualizer/` ディレクトリ)** の開発・運用・設計指針を記載した、サブプロジェクト専用のドキュメントです。
 > プロジェクト全体の概要や他のマシンの情報は [docs/summary.md](summary.md) を参照してください。
 
 ---
@@ -38,7 +38,7 @@
 ## 3. ディレクトリ構成とファイル概要
 
 ```
-eth_river_vis/
+visualizer/
 ├── build.gradle.kts           # Gradleビルド設定
 ├── settings.gradle.kts        # Gradleプロジェクト設定
 ├── gradlew / gradlew.bat      # Gradleラッパー
@@ -173,7 +173,7 @@ eth_river_vis/
 ## 9. ビルド・実行方法
 
 ```bash
-cd eth_river_vis
+cd visualizer
 ./gradlew build
 # IDEでMainクラスを実行、または ./gradlew run (要applicationプラグイン)
 ```
@@ -183,6 +183,6 @@ cd eth_river_vis
 ## 10. 関連ドキュメント
 
 -   [docs/summary.md](summary.md): プロジェクト全体サマリー
--   [docs/instructions_for_main.md](instructions_for_main.md): マシン 1 開発ガイド
+-   [docs/instructions_for_analyzer.md](instructions_for_analyzer.md): マシン 1 開発ガイド
 -   [docs/TODO.md](TODO.md): 全体 TODO リスト
 -   [docs/DECISIONS.md](DECISIONS.md): 設計決定履歴

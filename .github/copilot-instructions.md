@@ -17,7 +17,7 @@
 
 ## 2. 主要な技術スタックと設計上の制約
 
-### 2.1. マシン 1 (パケット解析: Python / eth-river)
+### 2.1. マシン 1 (パケット解析: Python / analyzer)
 
 -   **ライブラリ**: `pyshark`、`python-osc` を使用。
 -   **pyshark 設定**:
@@ -28,7 +28,7 @@
     -   解析したメタデータは `python-osc` クライアントを使用し、リアルタイムで即時送信すること。
     -   **重要**: `main.py` の `TARGET_IP = "127.0.0.1"` は**開発・テスト用の設定**である。本番環境（マシン 3 へのデプロイ時）には、この IP アドレスを**マシン 3 の IP アドレスに書き換える必要がある**ことを常に意識すること。
 
-### 2.2. マシン 3 (可視化: Java / Processing)
+### 2.2. マシン 3 (可視化: Java / Processing / visualizer)
 
 -   **連携**: Processing 側は `oscP5` ライブラリで OSC データを受信する。
 -   **通信方向判定**: 通信の方向 (Upstream/Downstream) の判定は、Processing 側でハードコーディングされた `localNetPrefix` 変数と `ip.startsWith()` を使って行われる。
@@ -83,8 +83,8 @@ Copilot によるコード提案は、以下の**未完了タスク**と**懸念
 ## 5. 参考ドキュメント（優先順）
 
 -   [`docs/summary.md`](../docs/summary.md): 人間向けトップサマリー（全体像・設計方針）
--   [`docs/instructions_for_main.md`](../docs/instructions_for_main.md): マシン 1 (pyshark) 開発ガイド
--   [`docs/instructions_for_vis.md`](../docs/instructions_for_vis.md): マシン 3 (Processing) 開発ガイド
+-   [`docs/instructions_for_analyzer.md`](../docs/instructions_for_analyzer.md): マシン 1 (pyshark) 開発ガイド
+-   [`docs/instructions_for_visualizer.md`](../docs/instructions_for_visualizer.md): マシン 3 (Processing) 開発ガイド
 -   [`docs/DECISIONS.md`](../docs/DECISIONS.md): アーキテクチャ設計の決定履歴
 -   [`docs/CPU_thread.md`](../docs/CPU_thread.md): パフォーマンスとスレッドに関する考察
 -   [`docs/TEST_DATA.md`](../docs/TEST_DATA.md): テストデータの仕様

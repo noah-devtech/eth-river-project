@@ -12,8 +12,8 @@
 
 ### サブプロジェクト別開発ガイド
 
--   **[docs/instructions_for_main.md](docs/instructions_for_main.md)**: マシン 1 (Python/pyshark) 専用開発ガイド
--   **[docs/instructions_for_vis.md](docs/instructions_for_vis.md)**: マシン 3 (Processing/Java) 専用開発ガイド
+-   **[docs/instructions_for_analyzer.md](docs/instructions_for_analyzer.md)**: マシン 1 (Python/pyshark) 専用開発ガイド
+-   **[docs/instructions_for_visualizer.md](docs/instructions_for_visualizer.md)**: マシン 3 (Processing/Java) 専用開発ガイド
 
 ---
 
@@ -25,11 +25,11 @@
 
 ## システム構成
 
-| マシン       | 役割                     | ディレクトリ                       | 主な技術                          |
-| :----------- | :----------------------- | :--------------------------------- | :-------------------------------- |
-| **マシン 1** | パケット解析・OSC 送信   | [`eth_river/`](eth_river/)         | Python 3.12+, pyshark, python-osc |
-| **マシン 2** | Kinect 認識・OSC 送信    | （未着手）                         | Python, OpenCV, python-osc 予定   |
-| **マシン 3** | 可視化・シミュレーション | [`eth_river_vis/`](eth_river_vis/) | Java 17, Processing 4, oscP5      |
+| マシン       | 役割                     | ディレクトリ                 | 主な技術                          |
+| :----------- | :----------------------- | :--------------------------- | :-------------------------------- |
+| **マシン 1** | パケット解析・OSC 送信   | [`analyzer/`](analyzer/)     | Python 3.12+, pyshark, python-osc |
+| **マシン 2** | Kinect 認識・OSC 送信    | （未着手）                   | Python, OpenCV, python-osc 予定   |
+| **マシン 3** | 可視化・シミュレーション | [`visualizer/`](visualizer/) | Java 17, Processing 4, oscP5      |
 
 ---
 
@@ -51,8 +51,8 @@
 ## ディレクトリ構成
 
 ```
-eth_river/         # マシン1: パケットキャプチャ・解析・OSC送信 (Python)
-eth_river_vis/     # マシン3: 可視化・シミュレーション (Java/Processing)
+analyzer/          # マシン1: パケットキャプチャ・解析・OSC送信 (Python)
+visualizer/        # マシン3: 可視化・シミュレーション (Java/Processing)
 docs/              # 技術仕様・設計・運用ドキュメント
 .github/           # Copilot/CI用設定
 ```
@@ -64,7 +64,7 @@ docs/              # 技術仕様・設計・運用ドキュメント
 ### マシン 1（パケット解析: Python）
 
 ```sh
-cd eth_river
+cd analyzer
 python -m pip install -r requirements.txt
 python main.py
 ```
@@ -74,7 +74,7 @@ python main.py
 ### マシン 3（可視化: Java/Processing）
 
 ```sh
-cd eth_river_vis
+cd visualizer
 ./gradlew build
 # IDEで Main クラスを実行、または ./gradlew run (要 applicationプラグイン)
 ```
@@ -130,8 +130,8 @@ cd eth_river_vis
 ## 参考ドキュメント
 
 -   [docs/summary.md](docs/summary.md): プロジェクト全体サマリー
--   [docs/instructions_for_main.md](docs/instructions_for_main.md): マシン 1（pyshark）開発ガイド
--   [docs/instructions_for_vis.md](docs/instructions_for_vis.md): マシン 3（Processing）開発ガイド
+-   [docs/instructions_for_analyzer.md](docs/instructions_for_analyzer.md): マシン 1（pyshark）開発ガイド
+-   [docs/instructions_for_visualizer.md](docs/instructions_for_visualizer.md): マシン 3（Processing）開発ガイド
 -   [docs/CPU_thread.md](docs/CPU_thread.md): パフォーマンス考察
 -   [docs/DECISIONS.md](docs/DECISIONS.md): 設計決定履歴
 
