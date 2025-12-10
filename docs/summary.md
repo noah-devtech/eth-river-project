@@ -9,8 +9,8 @@
 
 ## サブプロジェクト別ドキュメント
 
--   **マシン 1 (Python/pyshark)**: [docs/instructions_for_main.md](instructions_for_main.md)
--   **マシン 3 (Processing/Java)**: [docs/instructions_for_vis.md](instructions_for_vis.md)
+-   **マシン 1 (Python/pyshark)**: [docs/instructions_for_analyzer.md](instructions_for_analyzer.md)
+-   **マシン 3 (Processing/Java)**: [docs/instructions_for_visualizer.md](instructions_for_visualizer.md)
 -   **全体 TODO リスト**: [docs/TODO.md](TODO.md)
 -   **設計決定履歴**: [docs/DECISIONS.md](DECISIONS.md)
 -   **パフォーマンス考察**: [docs/CPU_thread.md](CPU_thread.md)
@@ -37,18 +37,18 @@
 
 ### 2.1. システム構成（3 台の Raspberry Pi）
 
-| マシン       | ハードウェア    | 役割                      | 開発ディレクトリ                      |
-| :----------- | :-------------- | :------------------------ | :------------------------------------ |
-| **マシン 1** | Raspberry Pi 4B | パケット解析・OSC 送信    | [`eth_river/`](../eth_river/)         |
-| **マシン 2** | Raspberry Pi 4B | Kinect 物体認識・OSC 送信 | （未着手）                            |
-| **マシン 3** | Raspberry Pi 5  | 可視化・シミュレーション  | [`eth_river_vis/`](../eth_river_vis/) |
+| マシン       | ハードウェア    | 役割                      | 開発ディレクトリ                |
+| :----------- | :-------------- | :------------------------ | :------------------------------ |
+| **マシン 1** | Raspberry Pi 4B | パケット解析・OSC 送信    | [`analyzer/`](../analyzer/)     |
+| **マシン 2** | Raspberry Pi 4B | Kinect 物体認識・OSC 送信 | （未着手）                      |
+| **マシン 3** | Raspberry Pi 5  | 可視化・シミュレーション  | [`visualizer/`](../visualizer/) |
 
 **通信方式**: **OSC (Open Sound Control)**
 
 -   マシン 1 → マシン 3: パケット情報（ポート `12345`）
 -   マシン 2 → マシン 3: Kinect 情報（ポート `12346`、仮仕様）
 
-### 2.2. マシン 1: パケット解析 ([`eth_river/`](../eth_river/))
+### 2.2. マシン 1: パケット解析 ([`analyzer/`](../analyzer/))
 
 **構成**: 透過型 L2 ブリッジ（`br0`）として動作。IP アドレスは持たない。管理 I/F として内蔵 Wi-Fi (`wlan0`) 経由で SSH 接続および OSC 送信を行う。
 
@@ -77,15 +77,15 @@ link_layer.py → network_layer.py → transport_layer/
 
 **主要ファイル**:
 
--   [`main.py`](../eth_river/main.py): メインループ（`sniff_continuously`）
--   [`utils.py`](../eth_river/utils.py): `get_nested_attr()`（None 安全な属性アクセス）、`format_output()`（OSC 送信）
--   [`pipeline/`](../eth_river/pipeline/): プロトコル層ごとのハンドラ群
+-   [`main.py`](../analyzer/main.py): メインループ（`sniff_continuously`）
+-   [`utils.py`](../analyzer/utils.py): `get_nested_attr()`（None 安全な属性アクセス）、`format_output()`（OSC 送信）
+-   [`pipeline/`](../analyzer/pipeline/): プロトコル層ごとのハンドラ群
 
 **開発時の注意点**:
 
--   **`TARGET_IP = "127.0.0.1"`** は開発・テスト用。**本番環境ではマシン 3 の IP アドレスに書き換える必要がある**（[`main.py`](../eth_river/main.py) 内）。
+-   **`TARGET_IP = "127.0.0.1"`** は開発・テスト用。**本番環境ではマシン 3 の IP アドレスに書き換える必要がある**（[`main.py`](../analyzer/main.py) 内）。
 
-### 2.3. マシン 3: 可視化 ([`eth_river_vis/`](../eth_river_vis/))
+### 2.3. マシン 3: 可視化 ([`visualizer/`](../visualizer/))
 
 **技術スタック**:
 
@@ -97,8 +97,8 @@ link_layer.py → network_layer.py → transport_layer/
 
 **主要ファイル**:
 
--   `src/main/java/net/noahbutler/eth_river_vis/Main.java`: メインクラス（`setup()`, `draw()`, `oscEvent()`）
--   `src/main/java/net/noahbutler/eth_river_vis/Particle.java`: パーティクルクラス
+-   `visualizer/src/main/java/Main.java`: メインクラス（`setup()`, `draw()`, `oscEvent()`）
+-   `visualizer/src/main/java/Particle.java`: パーティクルクラス
 
 **現在の実装レベル**:
 
@@ -132,16 +132,16 @@ link_layer.py → network_layer.py → transport_layer/
 
 ### 4.1. マシン 1（Python / pyshark）関連
 
--   **属性アクセスの統一**: `pyshark` の `packet` オブジェクトへのアクセスは、[`utils.py`](../eth_river/utils.py) にある `get_nested_attr()` で**常に**統一する。これにより、フィールド/属性の違いを意識せず、`None` 安全なアクセスが可能。
+-   **属性アクセスの統一**: `pyshark` の `packet` オブジェクトへのアクセスは、[`utils.py`](../analyzer/utils.py) にある `get_nested_attr()` で**常に**統一する。これにより、フィールド/属性の違いを意識せず、`None` 安全なアクセスが可能。
 
     ```python
     # 例
     sni = get_nested_attr(packet.tls, "handshake_extensions_server_name")
     ```
 
--   **TCP 再アセンブリ**: `pyshark` で `tcp.desegment_tcp_streams=TRUE` を有効にする。[`tcp_handler`](../eth_river/pipeline/transport_layer/tcp_handler.py) は `DATA` レイヤー の存在を考慮する必要がある。
+-   **TCP 再アセンブリ**: `pyshark` で `tcp.desegment_tcp_streams=TRUE` を有効にする。[`tcp_handler`](../analyzer/pipeline/transport_layer/tcp_handler.py) は `DATA` レイヤー の存在を考慮する必要がある。
 
--   **プロトコル振り分け**: `pyshark` が解析したレイヤー名 (`layer_name`) をキーとして、[`tcp_handler.py`](../eth_river/pipeline/transport_layer/tcp_handler.py) と [`udp_handler.py`](../eth_river/pipeline/transport_layer/udp_handler.py) の `APPLICATION_HANDLERS` 辞書で振り分ける。
+-   **プロトコル振り分け**: `pyshark` が解析したレイヤー名 (`layer_name`) をキーとして、[`tcp_handler.py`](../analyzer/pipeline/transport_layer/tcp_handler.py) と [`udp_handler.py`](../analyzer/pipeline/transport_layer/udp_handler.py) の `APPLICATION_HANDLERS` 辞書で振り分ける。
 
 -   **SNI の取得パス**:
     -   **TLS (HTTPS)**: `get_nested_attr(packet.tls, "handshake_extensions_server_name")`
@@ -190,7 +190,7 @@ link_layer.py → network_layer.py → transport_layer/
 
     -   `pyshark` の `sniff_continuously()` ループは、`tshark` プロセスからの出力をポーリングする**シングルスレッド**で動作していると想定される。
     -   高トラフィック下では、この Python 側の処理ループか、`tshark` プロセス自体が CPU ボトルネックとなり、**パケットロスが発生する危険性がある**。
-    -   したがって、[`main.py`](../eth_river/main.py) のメインループ内や、そこから呼び出されるパイプライン処理は、**極めて軽量**に保つ必要がある。
+    -   したがって、[`main.py`](../analyzer/main.py) のメインループ内や、そこから呼び出されるパイプライン処理は、**極めて軽量**に保つ必要がある。
 
 -   **マシン 3（Processing）のパフォーマンス**:
     -   RPi 5 で、多数のパーティクル（P1）＋高度な物理演算（P3-Sim）＋ Kinect からの OSC データ（P2-III）を同時に処理した際のフレームレートが未知数。
@@ -198,7 +198,7 @@ link_layer.py → network_layer.py → transport_layer/
 
 ### 5.2. 開発未着手・未完了の機能
 
--   **[`tcp_handler.py`](../eth_river/pipeline/transport_layer/tcp_handler.py) の実装**: TCP ハンドシェイク（P2-1）が未実装のままであり、最優先で修正が必要。
+-   **[`tcp_handler.py`](../analyzer/pipeline/transport_layer/tcp_handler.py) の実装**: TCP ハンドシェイク（P2-1）が未実装のままであり、最優先で修正が必要。
 
 -   **Kinect 開発**: マシン 2（Kinect）の開発が未着手。RPi 4B と Kinect の連携（ドライバ、CV 処理）がスムーズに進むか未検証。
 
@@ -206,7 +206,7 @@ link_layer.py → network_layer.py → transport_layer/
 
 ### 5.3. コード保守性
 
--   **TODO コメント**: [`dns_handler.py`](../eth_river/pipeline/transport_layer/application_layer/dns_handler.py) と [`tcp_handler.py`](../eth_river/pipeline/transport_layer/tcp_handler.py) に、過去のデバッグ用 TODO やリファクタリング TODO が残っている。これらの解消を促す、保守性の高いコードへのリファクタリングが望ましい。
+-   **TODO コメント**: [`dns_handler.py`](../analyzer/pipeline/transport_layer/application_layer/dns_handler.py) と [`tcp_handler.py`](../analyzer/pipeline/transport_layer/tcp_handler.py) に、過去のデバッグ用 TODO やリファクタリング TODO が残っている。これらの解消を促す、保守性の高いコードへのリファクタリングが望ましい。
 
 ---
 
@@ -215,7 +215,7 @@ link_layer.py → network_layer.py → transport_layer/
 ### マシン 1（Python）
 
 ```bash
-cd eth_river
+cd analyzer
 python -m pip install -r requirements.txt
 python main.py
 ```
@@ -223,7 +223,7 @@ python main.py
 ### マシン 3（Processing / Java）
 
 ```bash
-cd eth_river_vis
+cd visualizer
 ./gradlew run
 ```
 
@@ -233,8 +233,8 @@ cd eth_river_vis
 
 ### サブプロジェクト開発ガイド
 
--   [instructions_for_main.md](instructions_for_main.md): マシン 1 (Python/pyshark) 開発ガイド
--   [instructions_for_vis.md](instructions_for_vis.md): マシン 3 (Processing/Java) 開発ガイド
+-   [instructions_for_analyzer.md](instructions_for_analyzer.md): マシン 1 (Python/pyshark) 開発ガイド
+-   [instructions_for_visualizer.md](instructions_for_visualizer.md): マシン 3 (Processing/Java) 開発ガイド
 
 ### 設計・運用ドキュメント
 

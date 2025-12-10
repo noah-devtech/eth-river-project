@@ -1,6 +1,6 @@
 # マシン 1 (Python/pyshark) 開発ガイド
 
-> このファイルは **マシン 1 (`eth_river/` ディレクトリ)** の開発・運用・設計指針を記載した、サブプロジェクト専用のドキュメントです。
+> このファイルは **マシン 1 (`analyzer/` ディレクトリ)** の開発・運用・設計指針を記載した、サブプロジェクト専用のドキュメントです。
 > プロジェクト全体の概要や他のマシンの情報は [docs/summary.md](summary.md) を参照してください。
 
 ---
@@ -78,8 +78,8 @@
 
 ## 5. OSC 送信仕様（マシン 3 向け）
 
-**送信先**: マシン 3（デフォルト `TARGET_IP = "127.0.0.1"`）  
-**ポート**: `12345`  
+**送信先**: マシン 3（デフォルト `TARGET_IP = "127.0.0.1"`）
+**ポート**: `12345`
 **アドレス**: `/packet/{protocol_name}` (例: `/packet/dns`, `/packet/tls_hello`)
 
 **引数（順序固定）**:
@@ -144,7 +144,7 @@ sni = get_nested_attr(packet.tls, "handshake_extensions_server_name")
 ## 8. ビルド・実行方法
 
 ```bash
-cd eth_river
+cd analyzer
 python -m pip install -r requirements.txt
 python main.py
 ```
@@ -154,7 +154,7 @@ python main.py
 ## 9. 関連ドキュメント
 
 -   [docs/summary.md](summary.md): プロジェクト全体サマリー
--   [docs/instructions_for_vis.md](instructions_for_vis.md): マシン 3 開発ガイド
+-   [docs/instructions_for_visualizer.md](instructions_for_visualizer.md): マシン 3 開発ガイド
 -   [docs/TODO.md](TODO.md): 全体 TODO リスト
 -   [docs/DECISIONS.md](DECISIONS.md): 設計決定履歴
 -   [docs/CPU_thread.md](CPU_thread.md): パフォーマンス考察

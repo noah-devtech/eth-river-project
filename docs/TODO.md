@@ -20,8 +20,8 @@
 ## 参考: 旧 TODO リストの出典
 
 -   `.github/copilot-instructions.md`
--   `docs/instructions_for_main.md`
--   `docs/instructions_for_vis.md`
+-   `docs/instructions_for_analyzer.md`
+-   `docs/instructions_for_visualizer.md`
 -   `docs/DECISIONS.md`
 
 ---
