@@ -32,6 +32,8 @@ public class Main extends PApplet {
     float MIN_P_SIZE = 3;
     float MAX_P_SIZE = 30;
 
+    private final Object lock = new Object();// 排他制御のための専用の鍵
+
     @Override
     public void settings() {
         size(1000, 800); // ウィンドウサイズ
@@ -58,14 +60,16 @@ public class Main extends PApplet {
 
         //--- ★ここからパーティクル処理（レベル1物理演算） ---
         //リストを後ろから逆順にループ（削除しても安全なため）
-        for (int i = particles.size() - 1; i >= 0; i--) {
-            Particle p = particles.get(i);
-            p.update(); // 1. 物理演算（位置を更新）
-            p.draw();   // 2. 描画
+        synchronized(lock) {
+            for (int i = particles.size() - 1; i >= 0; i--) {
+                Particle p = particles.get(i);
+                p.update(); // 1. 物理演算（位置を更新）
+                p.draw();   // 2. 描画
 
-            // 3. 画面外に出たらリストから削除（メモリ節約）
-            if (p.isDead()) {
-                particles.remove(i);
+                // 3. 画面外に出たらリストから削除（メモリ節約）
+                if (p.isDead()) {
+                    particles.remove(i);
+                }
             }
         }
         //--- ★ここまでパーティクル処理 ---
@@ -139,7 +143,9 @@ public class Main extends PApplet {
             float particleSize = map(sqrtLength, sqrt(1), sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
             particleSize = max(MIN_P_SIZE,particleSize);
             float particleSpeed = random(3, 8);
-            particles.add(new Particle(srcNode,dstNode, particleSpeed, particleColor, particleSize));
+            synchronized (lock) {
+                particles.add(new Particle(srcNode, dstNode, particleSpeed, particleColor, particleSize));
+            }
             // --- ★ここまでパーティクル生成 ---
 
         } catch(Exception e) {
