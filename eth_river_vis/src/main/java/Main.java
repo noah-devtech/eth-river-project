@@ -28,9 +28,13 @@ public class Main extends PApplet {
     String lastDirection = "N/A";
     int lastNumber = 0;
 
+    int MAX_RAW_LENGTH = 65535;
+    float MIN_P_SIZE = 3;
+    float MAX_P_SIZE = 30;
+
     @Override
     public void settings() {
-        size(800, 600); // ウィンドウサイズ
+        size(1000, 800); // ウィンドウサイズ
     }
 
     @Override
@@ -131,7 +135,9 @@ public class Main extends PApplet {
             Node srcNode = getOrCreateNode(lastSrcIp);
             Node dstNode = getOrCreateNode(lastDstIp);
             // 粒子の大きさをパケット長で決定
-            float particleSize = map(lastLength, 40, 1500, 2, 20); // 40-1500バイトを2-20ピクセルに変換
+            float sqrtLength = sqrt(lastLength);
+            float particleSize = map(sqrtLength, sqrt(1), sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
+            particleSize = max(MIN_P_SIZE,particleSize);
             float particleSpeed = random(3, 8);
             particles.add(new Particle(srcNode,dstNode, particleSpeed, particleColor, particleSize));
             // --- ★ここまでパーティクル生成 ---
