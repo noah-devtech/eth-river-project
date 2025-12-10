@@ -334,8 +334,10 @@ public class Main extends PApplet {
             ellipse(pos.x, pos.y, size, size);
 
             fill(255);
+            pushStyle();
             textAlign(CENTER);
             text(ip, pos.x, pos.y + size + 10);
+            popStyle();
         }
 
     }
