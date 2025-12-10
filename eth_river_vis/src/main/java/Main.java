@@ -67,6 +67,9 @@ public class Main extends PApplet {
         //--- ★ここまでパーティクル処理 ---
         //--- nodeの表示 ---
         for (Node node : nodes.values()) {
+            node.separate(nodes);
+            node.seekCenter();
+            node.update();
             node.display();
         }
         //--- END:nodeの表示 ---
@@ -233,27 +236,108 @@ public class Main extends PApplet {
     }
 
     class Node {
-        String ip;PVector pos;
+        String ip;
+        PVector pos;
+        PVector vel;
+        PVector acc;
+        float maxspeed = 2.0f;
+        float maxforce = 0.05f;
         boolean isLocal;
         float size;
         int nodeColor;
 
-        Node(String ip, PVector pos, boolean isLocal){
-        this.ip = ip;
-        this.pos = pos;
-        this.isLocal = isLocal;
-        this.size = isLocal ? 15 : 8;
-        this.nodeColor = color(255, 0, 0);
+        Node(String ip, PVector startPos, boolean isLocal) {
+            this.ip = ip;
+            this.pos = startPos.copy();
+            this.vel = new PVector(0, 0); // 初期速度は0
+            this.acc = new PVector(0, 0); // 初期加速度は0
+            this.isLocal = isLocal;
+            this.size = isLocal ? 15 : 8;
+            this.nodeColor = color(255, 0, 0);
+        }
+        void applyForce(PVector force) {
+            acc.add(force);
+        }
+        void separate(Map<String, Node> nodes) {
+            float desiredseparation = size * 2.0f; // ノードのサイズに合わせて距離を調整
+            PVector steer = new PVector(0, 0, 0);
+            int count = 0;
+
+            // すべてのノードに対してループ
+            for (Node other : nodes.values()) {
+                float d = PVector.dist(pos, other.pos);
+
+                // 自分自身ではなく、かつ指定した距離より近い場合
+                if ((d > 0) && (d < desiredseparation)) {
+                    // 相手から自分へのベクトル（逃げる方向）を計算
+                    PVector diff = PVector.sub(pos, other.pos);
+                    diff.normalize();
+                    diff.div(d);        // 距離が近いほど強く反発するように重み付け
+                    steer.add(diff);
+                    count++;
+                }
+            }
+
+            // 平均を計算
+            if (count > 0) {
+                steer.div((float)count);
+            }
+
+            // 操舵力（Steering Force）の計算: Desired - Velocity
+            if (steer.mag() > 0) {
+                steer.normalize();
+                steer.mult(maxspeed);
+                steer.sub(vel);
+                steer.limit(maxforce); // 力の制限
+
+                // 計算した力を加速度に加える
+                applyForce(steer);
+            }
         }
 
-        public void display(){
+        // 画面中央に戻ろうとする力（これがないと分離する力で無限に彼方へ飛んでいきます）
+        void seekCenter() {
+            float targetX = isLocal ? width * 0.8f : width * 0.2f; // Localは右、Remoteは左へ
+            PVector target = new PVector(targetX, height/2);
+
+            PVector desired = PVector.sub(target, pos);
+            float d = desired.mag();
+
+            // 中心に近づくほどゆっくりにする (Arrive挙動)
+            if (d < 200) {
+                float m = map(d, 0, 200, 0, maxspeed);
+                desired.setMag(m);
+            } else {
+                desired.setMag(maxspeed);
+            }
+
+            PVector steer = PVector.sub(desired, vel);
+            steer.limit(maxforce * 0.1f); // 反発力より少し弱めに設定
+            applyForce(steer);
+        }
+
+        // 位置の更新
+        void update() {
+            vel.add(acc);
+            vel.limit(maxspeed);
+            pos.add(vel);
+            acc.mult(0); // 加速度をリセット
+
+            // 画面外に出ないように制限 (Borders)
+            pos.x = constrain(pos.x, size, width - size);
+            pos.y = constrain(pos.y, size, height - size);
+        }
+
+        public void display() {
             noStroke();
             fill(nodeColor);
             ellipse(pos.x, pos.y, size, size);
 
             fill(255);
-            text(ip, pos.x+5, pos.y+5);
+            textAlign(CENTER);
+            text(ip, pos.x, pos.y + size + 10);
         }
+
     }
     Node getOrCreateNode(String ip) {
         if (nodes.containsKey(ip)) {
