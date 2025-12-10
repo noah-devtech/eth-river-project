@@ -1,9 +1,11 @@
 import processing.core.PApplet;
 import processing.core.PVector;
 import oscP5.*; // oscP5 ライブラリをインポート
-import netP5.*; // netP5 ライブラリをインポート
+
 import java.util.ArrayList;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class Main extends PApplet {
@@ -12,8 +14,8 @@ public class Main extends PApplet {
 
     int listenPort;
 
-    // ★パーティクル（粒子）のリストを作成
     ArrayList<Particle> particles;
+    Map<String,Node> nodes;
 
     // 最後に受信した情報をテキスト表示用（デバッグ用）に保持
     String lastAddress = "N/A";
@@ -39,6 +41,8 @@ public class Main extends PApplet {
         //OSCリスナーを起動
         oscP5 = new OscP5(this, listenPort);
 
+        nodes = new HashMap<String,Node>();
+
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
     }
@@ -60,7 +64,11 @@ public class Main extends PApplet {
             }
         }
         //--- ★ここまでパーティクル処理 ---
-
+        //--- nodeの表示 ---
+        for (Node node : nodes.values()) {
+            node.display();
+        }
+        //--- END:nodeの表示 ---
 
         //--- デバッグ用のテキスト表示（以前のまま） ---
         fill(255, 150); // 少し透明にしてビジュアライゼーションの邪魔にならないように
@@ -96,7 +104,6 @@ public class Main extends PApplet {
             lastDirection = packetDirection(lastSrcIp, lastDstIp);
 
             // --- ★ここからパーティクル生成 ---
-            // 3. 受信したデータで新しいParticleを生成
 
             // 粒子の色をプロトコルによって決定
             int particleColor;
@@ -115,21 +122,14 @@ public class Main extends PApplet {
                 }
             };
 
-            // 粒子の大きさをパケット長で決定 (例)
+            Node srcNode = getOrCreateNode(lastSrcIp);
+            Node dstNode = getOrCreateNode(lastDstIp);
+            // 粒子の大きさをパケット長で決定
             float particleSize = map(lastLength, 40, 1500, 2, 20); // 40-1500バイトを2-20ピクセルに変換
-            PVector startPos;
-            PVector startVel;
-
-            if (lastDirection.equals("Outbound")) {
-                // [上り] 画面の下から発生し、上向きに流れる
-                startPos = new PVector(random(width), height); // 画面下部
-                startVel = new PVector(0, random(-3.0F, -1.0F)); // 上向きの速度
-            } else {
-                // [下り] [ローカル] [不明] はすべて画面上から下向きに流れる
-                startPos = new PVector(random(width), 0); // 画面上部
-                startVel = new PVector(0, random(1.0F, 3.0F)); // 下向きの速度
-            }
-            particles.add(new Particle(startPos, startVel, particleColor, particleSize));
+            PVector direction = PVector.sub(dstNode.pos, srcNode.pos);
+            direction.normalize();
+            direction.mult(random(3, 8));
+            particles.add(new Particle(srcNode.pos,dstNode.pos, direction, particleColor, particleSize));
             // --- ★ここまでパーティクル生成 ---
 
         } catch(Exception e) {
@@ -179,6 +179,7 @@ public class Main extends PApplet {
     // ==== = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     class Particle {
         PVector pos; // 位置
+        PVector target;
         PVector vel; // 速度
         int c;     // 色
         float size;  // 大きさ
@@ -190,8 +191,9 @@ public class Main extends PApplet {
          * @param startColor 粒子の色 (color)
          * @param startSize 粒子の大きさ (float)
          */
-        Particle(PVector startPos, PVector startVel, int startColor, float startSize) {
+        Particle(PVector startPos,PVector target, PVector startVel, int startColor, float startSize) {
             this.pos = startPos.copy();
+            this.target = target.copy();
             this.vel = startVel.copy();
             this.c = startColor;
             this.size = startSize;
@@ -217,12 +219,63 @@ public class Main extends PApplet {
          * 3. 画面外に出たかどうかの判定
          * @return 画面の上端または下端より外に出たら true
          */
-        boolean isDead() {
-            return (pos.y > height + size) || (pos.y < 0 - size);
+        boolean isDead() {// ターゲットとの距離が速度（1ステップの移動距離）より小さくなったら到着とみなす
+            float d = PVector.dist(pos, target);
+            // 画面外判定も念のため残す
+            if (pos.x < 0 || pos.x > width || pos.y < 0 || pos.y > height) return true;
+
+            // 到着判定 (スピードより近くまで来たら消す)
+            return d < vel.mag();
         }
     }
 
+    class Node {
+        String ip;PVector pos;
+        boolean isLocal;
+        float size;
+        int nodeColor;
 
+        Node(String ip, PVector pos, boolean isLocal){
+        this.ip = ip;
+        this.pos = pos;
+        this.isLocal = isLocal;
+        this.size = isLocal ? 15 : 8;
+        this.nodeColor = color(255, 0, 0);
+        }
+
+        public void display(){
+            noStroke();
+            fill(nodeColor);
+            ellipse(pos.x, pos.y, size, size);
+
+            fill(255);
+            text(ip, pos.x+5, pos.y+5);
+        }
+    }
+    Node getOrCreateNode(String ip) {
+        if (nodes.containsKey(ip)) {
+            return nodes.get(ip);
+        }
+
+        // 新しいノードの座標計算
+        float x, y;
+        boolean isLocal = ip.startsWith("160.194.177.107");
+
+        y = random(height * 0.1f, height * 0.9f);
+
+        if (isLocal) {
+            // ローカルIP: 画面右側
+            x = random(width * 0.8f, width * 0.9f);
+        } else {
+            // リモートIP: 画面左側
+            x = random(width * 0.1f, width * 0.2f);
+        }
+
+        PVector pos = new PVector(x, y);
+        Node newNode = new Node(ip, pos, isLocal);
+        nodes.put(ip, newNode);
+        return newNode;
+    }
     public static void main(String[] args) {
         // "パッケージ名.クラス名" を文字列で渡す
         PApplet.main("Main");
