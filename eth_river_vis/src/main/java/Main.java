@@ -132,10 +132,8 @@ public class Main extends PApplet {
             Node dstNode = getOrCreateNode(lastDstIp);
             // 粒子の大きさをパケット長で決定
             float particleSize = map(lastLength, 40, 1500, 2, 20); // 40-1500バイトを2-20ピクセルに変換
-            PVector direction = PVector.sub(dstNode.pos, srcNode.pos);
-            direction.normalize();
-            direction.mult(random(3, 8));
-            particles.add(new Particle(srcNode.pos,dstNode.pos, direction, particleColor, particleSize));
+            float particleSpeed = random(3, 8);
+            particles.add(new Particle(srcNode,dstNode, particleSpeed, particleColor, particleSize));
             // --- ★ここまでパーティクル生成 ---
 
         } catch(Exception e) {
@@ -185,22 +183,23 @@ public class Main extends PApplet {
     // ==== = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
     class Particle {
         PVector pos; // 位置
-        PVector target;
-        PVector vel; // 速度
+        Node targetNode;
+        float vel; // 速度
         int c;     // 色
         float size;  // 大きさ
 
         /**
          * コンストラクタ（設計図）
-         * @param startPos 初期位置 (PVector)
-         * @param startVel 初期速度 (PVector)
+         * @param startNode スタートのNode (Node)
+         * @param targetNode ターゲットのNode (Node)
+         * @param particleSpeed 初期速度 (float)
          * @param startColor 粒子の色 (color)
          * @param startSize 粒子の大きさ (float)
          */
-        Particle(PVector startPos,PVector target, PVector startVel, int startColor, float startSize) {
-            this.pos = startPos.copy();
-            this.target = target.copy();
-            this.vel = startVel.copy();
+        Particle(Node startNode,Node targetNode, float particleSpeed, int startColor, float startSize) {
+            this.pos = startNode.pos.copy();
+            this.targetNode = targetNode;
+            this.vel = particleSpeed;
             this.c = startColor;
             this.size = startSize;
         }
@@ -209,7 +208,10 @@ public class Main extends PApplet {
          * 1. 物理演算（位置の更新）
          */
         void update() {
-            pos.add(vel); // 位置 ＝ 現在の位置 ＋ 速度
+            PVector dir =PVector.sub(targetNode.pos,pos);
+            dir.normalize();
+            dir.mult(vel);
+            pos.add(dir);
         }
 
         /**
@@ -226,12 +228,12 @@ public class Main extends PApplet {
          * @return 画面の上端または下端より外に出たら true
          */
         boolean isDead() {// ターゲットとの距離が速度（1ステップの移動距離）より小さくなったら到着とみなす
-            float d = PVector.dist(pos, target);
+            float d = PVector.dist(pos, targetNode.pos);
             // 画面外判定も念のため残す
             if (pos.x < 0 || pos.x > width || pos.y < 0 || pos.y > height) return true;
 
             // 到着判定 (スピードより近くまで来たら消す)
-            return d < vel.mag();
+            return d < vel;
         }
     }
 
