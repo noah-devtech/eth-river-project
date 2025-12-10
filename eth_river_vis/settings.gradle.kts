@@ -1,1 +1,0 @@
-rootProject.name = "eth_river_vis"
