@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main extends PApplet {
 
@@ -41,7 +42,7 @@ public class Main extends PApplet {
         //OSCリスナーを起動
         oscP5 = new OscP5(this, listenPort);
 
-        nodes = new HashMap<String,Node>();
+        nodes = new ConcurrentHashMap<String,Node>();
 
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
@@ -69,6 +70,8 @@ public class Main extends PApplet {
             node.display();
         }
         //--- END:nodeの表示 ---
+
+        // nodes.values().removeIf(n -> n.isDead());
 
         //--- デバッグ用のテキスト表示（以前のまま） ---
         fill(255, 150); // 少し透明にしてビジュアライゼーションの邪魔にならないように
