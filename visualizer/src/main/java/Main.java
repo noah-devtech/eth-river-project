@@ -1,12 +1,13 @@
+import inet.ipaddr.AddressStringException;
 import processing.core.PApplet;
 import processing.core.PVector;
 import oscP5.*;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
 
 public class Main extends PApplet {
 
@@ -80,7 +81,8 @@ public class Main extends PApplet {
         text("Source IP: " + lastSrcIp, 20, 130);
         text("Dest IP: " + lastDstIp, 20, 150);
         text("Packet NO.: " + lastNumber, 20, 170);
-        text("Particle Count: " + particles.size(), 20, 190);
+        text("Direction: " + lastDirection, 20, 190);
+        text("Particle Count: " + particles.size(), 20, 210);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -151,9 +153,23 @@ public class Main extends PApplet {
         else if (!isLocal(srcIp) && isLocal(dstIp)) return "Inbound";
         else return "Unknown";
     }
-
+    private static final Set<String> localIpSet = new HashSet<>(Set.of(
+            "127.0.0.1",
+            "192.168.1.10",
+            "10.0.0.5"
+    ));
     private boolean isLocal(String ip) {
-        return ip.equals("127.0.0.1") || ip.equals("localhost") || ip.equals("127.0.0.1");
+        IPAddress address = null;
+        boolean isLocal = false;
+        try {
+            address = new IPAddressString(ip).toAddress();
+            if(address.toIPv4().isPrivate()||localIpSet.contains(ip)){
+                return true;
+            }
+        } catch (AddressStringException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
     }
 
     Node getOrCreateNode(String ip) {
@@ -162,7 +178,7 @@ public class Main extends PApplet {
         }
 
         float x, y;
-        boolean isLocal = ip.startsWith("127.0.0.1");
+        boolean isLocal = isLocal(ip);
         y = random(height * 0.1f, height * 0.9f);
 
         if (isLocal) {
