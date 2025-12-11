@@ -12,6 +12,7 @@ repositories {
     }
     // oscP5 のためにこのリポジトリを追加
     maven { url = uri("https://repo.clojars.org/") }
+    maven { url = uri("https://jitpack.io")}
 }
 
 dependencies {
@@ -21,6 +22,7 @@ dependencies {
     implementation("org.processing:core:4.3.4")
     // oscP5 (バージョン 0.9.8 は 2014年のもの)
     implementation("de.sojamo:oscp5:0.9.8")
+    implementation("com.github.seancfoley:ipaddress:5.5.1")
 }
 
 tasks.test {
