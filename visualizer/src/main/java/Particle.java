@@ -29,8 +29,10 @@ public class Particle {
     void update(ArrayList<Particle> particles) {
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
+        PVector cohesion = cohesion(particles);
         applayForce(steer);
-        applayForce(separation.mult(1.5f));
+        applayForce(separation.mult(3.0f));
+        applayForce(cohesion.mult(0.5f));
 
         //オイラー積分
         vel.add(acc);
@@ -83,6 +85,28 @@ public class Particle {
             sum.limit(this.maxForce);
         }
         return sum;
+    }
+
+    PVector cohesion(ArrayList<Particle> particles) {
+        float neighborhoodRadius = this.size * 10.0f;
+        PVector centerOfMass = new PVector(0, 0);
+        int count = 0;
+
+        for (Particle other : particles) {
+            float d = PVector.dist(pos, other.pos);
+
+            if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
+                centerOfMass.add(other.pos);
+                count++;
+            }
+        }
+
+        if (count > 0) {
+            centerOfMass.div(count);
+            return seek(centerOfMass);
+        }
+
+        return new PVector(0, 0);
     }
 
     void applayForce(PVector force) {
