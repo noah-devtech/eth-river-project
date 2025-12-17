@@ -1,29 +1,44 @@
 import processing.core.PApplet;
 import processing.core.PVector;
 
+import java.util.ArrayList;
+
 public class Particle {
     PApplet p; // メインのAppletへの参照
     PVector pos;
+    PVector vel;
+    PVector acc;
     Node targetNode;
-    float vel;
+    float maxSpeed;
+    float maxForce = 0.5f;
     int c;
     float size;
 
     // コンストラクタの第一引数に PApplet を追加
-    public Particle(PApplet p, Node startNode, Node targetNode, float particleSpeed, int startColor, float startSize) {
+    public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
         this.p = p;
         this.pos = startNode.pos.copy();
         this.targetNode = targetNode;
-        this.vel = particleSpeed;
+        this.maxSpeed = maxSpeed;
         this.c = startColor;
         this.size = startSize;
+        this.vel = new PVector(0, 0);
+        this.acc = new PVector(0, 0);
     }
 
-    void update() {
-        PVector dir = PVector.sub(targetNode.pos, pos);
-        dir.normalize();
-        dir.mult(vel);
-        pos.add(dir);
+    void update(ArrayList<Particle> particles) {
+        PVector steer = seek(targetNode.pos);
+        PVector separation = separate(particles);
+        applayForce(steer);
+        applayForce(separation.mult(1.5f));
+
+        //オイラー積分
+        vel.add(acc);
+        vel.limit(maxSpeed);
+        pos.add(vel);
+
+        //加速度をリセット
+        acc.mult(0);
     }
 
     void draw() {
@@ -36,6 +51,42 @@ public class Particle {
         float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < vel;
+        return d < maxSpeed;
+    }
+
+    PVector seek(PVector target) {
+        PVector desired = PVector.sub(target, pos);
+        desired.normalize();
+        desired.mult(maxSpeed);
+        PVector sum = PVector.sub(desired, vel);
+        sum.limit(maxForce);
+        return sum;
+    }
+
+    PVector separate(ArrayList<Particle> particles) {
+        float desiredSeparation = this.size;
+        PVector sum = new PVector(0, 0);
+        int count = 0;
+        for (Particle other : particles) {
+            float d = PVector.dist(pos, other.pos);
+            if ((d > 0) && (d < desiredSeparation)) {
+                PVector diff = PVector.sub(pos, other.pos);
+                diff.div(d);
+                sum.add(diff);
+                count++;
+            }
+        }
+        if (count > 0) {
+            sum.div(count);
+            sum.normalize();
+            sum.mult(this.maxSpeed);
+            sum.limit(this.maxForce);
+        }
+        return sum;
+    }
+
+    void applayForce(PVector force) {
+        PVector f = force.copy();
+        acc.add(f);
     }
 }
