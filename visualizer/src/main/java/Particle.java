@@ -13,6 +13,7 @@ public class Particle {
     float maxForce = 0.5f;
     int c;
     float size;
+    float slowingRadius = 100; // この距離に入ると減速を開始
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
@@ -55,16 +56,26 @@ public class Particle {
         float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < maxSpeed;
+        return d < (this.size);
     }
 
     PVector seek(PVector target) {
         PVector desired = PVector.sub(target, pos);
+        float d = desired.mag();
+        float minSpeed = maxSpeed * 0.25f;
         desired.normalize();
-        desired.mult(maxSpeed);
-        PVector sum = PVector.sub(desired, vel);
-        sum.limit(maxForce);
-        return sum;
+
+        // Arrival Behavior
+        if (d < slowingRadius) {
+            float m = PApplet.map(d, 0, slowingRadius, minSpeed, maxSpeed);
+            desired.mult(m);
+        } else {
+            desired.mult(maxSpeed);
+        }
+
+        PVector steer = PVector.sub(desired, vel);
+        steer.limit(maxForce);
+        return steer;
     }
 
     PVector separate(ArrayList<Particle> particles) {
