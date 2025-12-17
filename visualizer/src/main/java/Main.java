@@ -1,22 +1,27 @@
 import inet.ipaddr.AddressStringException;
-import processing.core.PApplet;
-import processing.core.PVector;
-import oscP5.*;
-
-import java.util.*;
-import java.io.InputStream;
-import java.util.concurrent.ConcurrentHashMap;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
+import oscP5.OscMessage;
+import oscP5.OscP5;
+import processing.core.PApplet;
+import processing.core.PVector;
+
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main extends PApplet {
 
+    private static final Set<String> localIpSet = new HashSet<>(Set.of(
+            "127.0.0.1",
+            "192.168.1.10",
+            "10.0.0.5"
+    ));
+    private final Object lock = new Object();
     OscP5 oscP5;
     int listenPort;
-
     ArrayList<Particle> particles;
     Map<String, Node> nodes;
-
     String lastAddress = "N/A";
     String lastProtocol = "N/A";
     int lastLength = 0;
@@ -25,12 +30,13 @@ public class Main extends PApplet {
     String lastDstIp = "N/A";
     String lastDirection = "N/A";
     int lastNumber = 0;
-
     int MAX_RAW_LENGTH = 65535;
     float MIN_P_SIZE = 3;
     float MAX_P_SIZE = 30;
 
-    private final Object lock = new Object();
+    public static void main(String[] args) {
+        PApplet.main("Main");
+    }
 
     @Override
     public void settings() {
@@ -56,7 +62,7 @@ public class Main extends PApplet {
         synchronized (lock) {
             for (int i = particles.size() - 1; i >= 0; i--) {
                 Particle p = particles.get(i);
-                p.update();
+                p.update(particles);
                 p.draw();
                 if (p.isDead()) {
                     particles.remove(i);
@@ -153,17 +159,13 @@ public class Main extends PApplet {
         else if (!isLocal(srcIp) && isLocal(dstIp)) return "Inbound";
         else return "Unknown";
     }
-    private static final Set<String> localIpSet = new HashSet<>(Set.of(
-            "127.0.0.1",
-            "192.168.1.10",
-            "10.0.0.5"
-    ));
+
     private boolean isLocal(String ip) {
         IPAddress address = null;
         boolean isLocal = false;
         try {
             address = new IPAddressString(ip).toAddress();
-            if(address.toIPv4().isPrivate()||localIpSet.contains(ip)){
+            if (address.toIPv4().isPrivate() || localIpSet.contains(ip)) {
                 return true;
             }
         } catch (AddressStringException e) {
@@ -192,9 +194,5 @@ public class Main extends PApplet {
         Node newNode = new Node(this, ip, pos, isLocal);
         nodes.put(ip, newNode);
         return newNode;
-    }
-
-    public static void main(String[] args) {
-        PApplet.main("Main");
     }
 }
