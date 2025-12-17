@@ -1,5 +1,4 @@
 import processing.core.PApplet;
-import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
@@ -18,13 +17,14 @@ public class Particle {
     float size;
     float slowingRadius = 100; // この距離に入ると減速を開始
     Node srcNode;
+    ArrayList<PVector> history = new ArrayList<PVector>();
+    int maxHistory = 5;
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
         this.p = p;
         this.srcNode = startNode;
         this.pos = startNode.pos.copy();
-        this.prevPos = this.pos.copy();
         this.targetNode = targetNode;
         this.maxSpeed = maxSpeed;
         this.c = startColor;
@@ -34,7 +34,10 @@ public class Particle {
     }
 
     void update(ArrayList<Particle> particles) {
-        prevPos.set(pos);
+        history.add(pos.copy());
+        if (history.size() > maxHistory) {
+            history.removeFirst();
+        }
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
         PVector cohesion = cohesion(particles);
@@ -54,12 +57,16 @@ public class Particle {
     }
 
     void draw(PGraphics pg) {
-        pg.strokeWeight(size);
-        pg.stroke(c, 150);
-        pg.strokeCap(PConstants.ROUND);
+        pg.noFill();
+        pg.stroke(c);
+        pg.strokeWeight(1.5f);
 
-        pg.line(prevPos.x, prevPos.y, pos.x, pos.y);
-        pg.noStroke();
+        pg.beginShape();
+        for (PVector pos : history) {
+            pg.vertex(pos.x, pos.y);
+        }
+        pg.vertex(pos.x, pos.y);
+        pg.endShape();
     }
 
     boolean isDead() {
