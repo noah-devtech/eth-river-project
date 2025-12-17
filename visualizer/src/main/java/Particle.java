@@ -30,9 +30,11 @@ public class Particle {
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
         PVector cohesion = cohesion(particles);
-        applayForce(steer);
-        applayForce(separation.mult(3.0f));
-        applayForce(cohesion.mult(0.5f));
+        PVector alignment = alignment(particles);
+        applyForce(steer);
+        applyForce(separation.mult(2.5f));
+        applyForce(alignment.mult(0.8f));
+        applyForce(cohesion.mult(0.5f));
 
         //オイラー積分
         vel.add(acc);
@@ -109,7 +111,35 @@ public class Particle {
         return new PVector(0, 0);
     }
 
-    void applayForce(PVector force) {
+    PVector alignment(ArrayList<Particle> particles) {
+        float neighborhoodRadius = this.size * 5.0f;
+        PVector sumVelocity = new PVector(0, 0);
+        int count = 0;
+
+        for (Particle other : particles) {
+            float d = PVector.dist(pos, other.pos);
+
+            if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
+                sumVelocity.add(other.vel);
+                count++;
+            }
+        }
+
+        if (count > 0) {
+            sumVelocity.div(count);
+            sumVelocity.normalize();
+            sumVelocity.mult(maxSpeed);
+
+            PVector steer = PVector.sub(sumVelocity, vel);
+            steer.limit(maxForce); // 操舵力を制限
+            return steer;
+        }
+
+        return new PVector(0, 0);
+
+    }
+
+    void applyForce(PVector force) {
         PVector f = force.copy();
         acc.add(f);
     }
