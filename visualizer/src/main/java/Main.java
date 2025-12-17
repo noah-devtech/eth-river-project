@@ -1,4 +1,3 @@
-import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import oscP5.OscMessage;
@@ -7,16 +6,19 @@ import processing.core.PApplet;
 import processing.core.PVector;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Main extends PApplet {
 
-    private static final Set<String> localIpSet = new HashSet<>(Set.of(
-            "127.0.0.1",
-            "192.168.1.10",
-            "10.0.0.5"
-    ));
+    private static final String[] TARGET_PREFIXES = {
+            "10.0.0.0/8",
+            "172.0.0.0/12",
+            "192.168.0.0/16",
+            "127.0.0.1/32"
+    };
     private final Object lock = new Object();
     OscP5 oscP5;
     int listenPort;
@@ -58,6 +60,7 @@ public class Main extends PApplet {
     @Override
     public void draw() {
         background(0);
+
 
         synchronized (lock) {
             for (int i = particles.size() - 1; i >= 0; i--) {
@@ -161,15 +164,16 @@ public class Main extends PApplet {
     }
 
     private boolean isLocal(String ip) {
-        IPAddress address = null;
-        boolean isLocal = false;
         try {
-            address = new IPAddressString(ip).toAddress();
-            if (address.toIPv4().isPrivate() || localIpSet.contains(ip)) {
-                return true;
+            IPAddress address = new IPAddressString(ip).toAddress();
+            // 指定された範囲に属するかチェック
+            for (String prefix : TARGET_PREFIXES) {
+                if (new IPAddressString(prefix).toAddress().contains(address)) {
+                    return true;
+                }
             }
-        } catch (AddressStringException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            return false;
         }
         return false;
     }
