@@ -1,4 +1,6 @@
 import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.core.PGraphics;
 import processing.core.PVector;
 
 import java.util.ArrayList;
@@ -6,6 +8,7 @@ import java.util.ArrayList;
 public class Particle {
     PApplet p; // メインのAppletへの参照
     PVector pos;
+    PVector prevPos;
     PVector vel;
     PVector acc;
     Node targetNode;
@@ -19,6 +22,7 @@ public class Particle {
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
         this.p = p;
         this.pos = startNode.pos.copy();
+        this.prevPos = this.pos.copy();
         this.targetNode = targetNode;
         this.maxSpeed = maxSpeed;
         this.c = startColor;
@@ -28,6 +32,7 @@ public class Particle {
     }
 
     void update(ArrayList<Particle> particles) {
+        prevPos.set(pos);
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
         PVector cohesion = cohesion(particles);
@@ -46,10 +51,13 @@ public class Particle {
         acc.mult(0);
     }
 
-    void draw() {
-        p.noStroke(); // p. をつける
-        p.fill(c, 200);
-        p.ellipse(pos.x, pos.y, size, size);
+    void draw(PGraphics pg) {
+        pg.strokeWeight(size);
+        pg.stroke(c, 150);
+        pg.strokeCap(PConstants.ROUND);
+
+        pg.line(prevPos.x, prevPos.y, pos.x, pos.y);
+        pg.noStroke();
     }
 
     boolean isDead() {
