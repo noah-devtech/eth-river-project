@@ -17,10 +17,12 @@ public class Particle {
     int c;
     float size;
     float slowingRadius = 100; // この距離に入ると減速を開始
+    Node srcNode;
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
         this.p = p;
+        this.srcNode = startNode;
         this.pos = startNode.pos.copy();
         this.prevPos = this.pos.copy();
         this.targetNode = targetNode;
@@ -161,5 +163,14 @@ public class Particle {
     void applyForce(PVector force) {
         PVector f = force.copy();
         acc.add(f);
+    }
+
+    public void makeNodeAlive() {
+        if (targetNode != null) {
+            targetNode.keepAlive();
+        }
+        if (srcNode != null) {
+            srcNode.keepAlive();
+        }
     }
 }

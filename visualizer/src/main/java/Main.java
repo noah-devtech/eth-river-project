@@ -69,7 +69,7 @@ public class Main extends PApplet {
         fadeLayer.noStroke();
         fadeLayer.fill(10);
         fadeLayer.rect(0, 0, width, height);
-        
+
         fadeLayer.blendMode(ADD);
 
 
@@ -78,6 +78,7 @@ public class Main extends PApplet {
                 Particle p = particles.get(i);
                 p.update(particles);
                 p.draw(fadeLayer);
+                p.makeNodeAlive();
                 if (p.isDead()) {
                     particles.remove(i);
                 }
@@ -93,6 +94,10 @@ public class Main extends PApplet {
             node.seekCenter();
             node.update();
             node.display();
+            node.life--;
+            if (node.isDead()) {
+                nodes.remove(node.ip);
+            }
         }
 
         fill(255, 150);

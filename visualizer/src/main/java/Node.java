@@ -1,5 +1,6 @@
 import processing.core.PApplet;
 import processing.core.PVector;
+
 import java.util.Map;
 
 public class Node {
@@ -13,6 +14,8 @@ public class Node {
     boolean isLocal;
     float size;
     int nodeColor;
+    int life = 300;
+    int maxLife = 300;
 
     // コンストラクタの第一引数に PApplet を追加
     public Node(PApplet p, String ip, PVector startPos, boolean isLocal) {
@@ -23,7 +26,7 @@ public class Node {
         this.acc = new PVector(0, 0);
         this.isLocal = isLocal;
         this.size = isLocal ? 15 : 8;
-        this.nodeColor = p.color(255, 0, 0); // color関数もpが必要
+        this.nodeColor = p.color(255, 0, 0);
     }
 
     void applyForce(PVector force) {
@@ -91,14 +94,23 @@ public class Node {
     }
 
     public void display() {
+        float nodeAlpha = PApplet.map(life, 300, 0, 255, 0);
         p.noStroke();
-        p.fill(nodeColor);
+        p.fill(nodeColor, nodeAlpha);
         p.ellipse(pos.x, pos.y, size, size);
 
-        p.fill(255);
+        p.fill(255, nodeAlpha);
         p.pushStyle();
         p.textAlign(PApplet.CENTER); // 定数はクラス名アクセス可
         p.text(ip, pos.x, pos.y + size + 10);
         p.popStyle();
+    }
+
+    public boolean isDead() {
+        return life <= 0;
+    }
+
+    void keepAlive() {
+        this.life = maxLife;
     }
 }
