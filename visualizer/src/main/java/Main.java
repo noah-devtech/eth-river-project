@@ -124,7 +124,7 @@ public class Main extends PApplet {
             float sqrtLength = sqrt(lastLength);
             float particleSize = map(sqrtLength, sqrt(1), sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
             particleSize = max(MIN_P_SIZE, particleSize);
-            float particleSpeed = random(3, 8);
+            float particleSpeed = 5;
 
             synchronized (lock) {
                 // 変更点: 第一引数に this を渡す
