@@ -3,6 +3,7 @@ import inet.ipaddr.IPAddressString;
 import oscP5.OscMessage;
 import oscP5.OscP5;
 import processing.core.PApplet;
+import processing.core.PGraphics;
 import processing.core.PVector;
 
 import java.io.InputStream;
@@ -36,6 +37,8 @@ public class Main extends PApplet {
     float MIN_P_SIZE = 3;
     float MAX_P_SIZE = 30;
 
+    PGraphics fadeLayer;
+
     public static void main(String[] args) {
         PApplet.main("Main");
     }
@@ -52,6 +55,7 @@ public class Main extends PApplet {
         particles = new ArrayList<Particle>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
+        fadeLayer = createGraphics(width, height);
 
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
@@ -59,19 +63,30 @@ public class Main extends PApplet {
 
     @Override
     public void draw() {
-        background(0);
+        fadeLayer.beginDraw();
+        fadeLayer.blendMode(SUBTRACT);
+
+        fadeLayer.noStroke();
+        fadeLayer.fill(10);
+        fadeLayer.rect(0, 0, width, height);
+        
+        fadeLayer.blendMode(ADD);
 
 
         synchronized (lock) {
             for (int i = particles.size() - 1; i >= 0; i--) {
                 Particle p = particles.get(i);
                 p.update(particles);
-                p.draw();
+                p.draw(fadeLayer);
                 if (p.isDead()) {
                     particles.remove(i);
                 }
             }
         }
+        fadeLayer.endDraw();
+        background(0);
+        blendMode(BLEND);
+        image(fadeLayer, 0, 0);
 
         for (Node node : nodes.values()) {
             node.separate(nodes);
