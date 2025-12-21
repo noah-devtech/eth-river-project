@@ -45,7 +45,7 @@ public class Main extends PApplet {
 
     @Override
     public void settings() {
-        size(1000, 800);
+        size(1000, 800, P2D);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class Main extends PApplet {
         particles = new ArrayList<Particle>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
-        fadeLayer = createGraphics(width, height);
+        fadeLayer = createGraphics(width, height, P2D);
 
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
