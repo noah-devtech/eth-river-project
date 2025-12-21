@@ -1,9 +1,16 @@
 plugins {
     id("java")
+    id("application")
 }
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
 
 repositories {
     mavenCentral()
@@ -12,7 +19,7 @@ repositories {
     }
     // oscP5 のためにこのリポジトリを追加
     maven { url = uri("https://repo.clojars.org/") }
-    maven { url = uri("https://jitpack.io")}
+    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {

@@ -38,7 +38,7 @@ public class Particle {
     void update(ArrayList<Particle> particles) {
         history.add(pos.copy());
         if (history.size() > maxHistory) {
-            history.removeFirst();
+            history.remove(0);
         }
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
