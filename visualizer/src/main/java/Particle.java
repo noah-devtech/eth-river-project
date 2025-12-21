@@ -4,6 +4,8 @@ import processing.core.PVector;
 
 import java.util.ArrayList;
 
+import static processing.core.PConstants.TWO_PI;
+
 public class Particle {
     PApplet p; // メインのAppletへの参照
     PVector pos;
@@ -15,7 +17,7 @@ public class Particle {
     float maxForce = 0.5f;
     int c;
     float size;
-    float slowingRadius = 100; // この距離に入ると減速を開始
+    float slowingRadius = 200; // この距離に入ると減速を開始
     Node srcNode;
     ArrayList<PVector> history = new ArrayList<PVector>();
     int maxHistory = 5;
@@ -36,7 +38,7 @@ public class Particle {
     void update(ArrayList<Particle> particles) {
         history.add(pos.copy());
         if (history.size() > maxHistory) {
-            history.removeFirst();
+            history.remove(0);
         }
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
@@ -47,6 +49,17 @@ public class Particle {
         applyForce(alignment.mult(0.8f));
         applyForce(cohesion.mult(0.5f));
 
+
+        float dist = PVector.dist(targetNode.pos, pos);
+        float dampingRadius = 200.0f; // 抵抗が発生し始める距離
+
+        if (dist < dampingRadius) {
+            // 近づくほど「摩擦」を強くする（1.0 = 摩擦なし、0.9 = 強い摩擦）
+            // map(現在距離, 0, 150, 最大摩擦, 摩擦なし)
+            float damping = PApplet.map(dist, 0, dampingRadius, 0.85f, 1.0f);
+
+            vel.mult(damping);
+        }
         //オイラー積分
         vel.add(acc);
         vel.limit(maxSpeed);
@@ -59,7 +72,7 @@ public class Particle {
     void draw(PGraphics pg) {
         pg.noFill();
         pg.stroke(c);
-        pg.strokeWeight(1.5f);
+        pg.strokeWeight(1.0f);
 
         pg.beginShape();
         for (PVector pos : history) {
@@ -73,14 +86,24 @@ public class Particle {
         float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < (this.size);
+        return d < (this.size * 0.75f);
     }
 
     PVector seek(PVector target) {
         PVector desired = PVector.sub(target, pos);
+
         float d = desired.mag();
-        float minSpeed = maxSpeed * 0.25f;
+        float minSpeed = maxSpeed * 0.3f;
+        // ここで少しノイズを加える（ゆらぎ）
+        float angle = p.noise((float) (pos.x * 0.01), (float) (pos.y * 0.01), (float) (p.frameCount * 0.01)) * TWO_PI;
+        PVector wobble = PVector.fromAngle(angle);
+        wobble.mult(0.5F); // 揺れの強さ
+
+        PVector steer = PVector.sub(desired, vel);
+        steer.add(wobble); // 操舵力にゆらぎを足す
+
         desired.normalize();
+        desired.mult(maxSpeed);
 
         // Arrival Behavior
         if (d < slowingRadius) {
@@ -90,13 +113,13 @@ public class Particle {
             desired.mult(maxSpeed);
         }
 
-        PVector steer = PVector.sub(desired, vel);
+        //PVector steer = PVector.sub(desired, vel);
         steer.limit(maxForce);
         return steer;
     }
 
     PVector separate(ArrayList<Particle> particles) {
-        float desiredSeparation = this.size;
+        float desiredSeparation = this.size * 0.1f;
         PVector sum = new PVector(0, 0);
         int count = 0;
         for (Particle other : particles) {
@@ -180,4 +203,6 @@ public class Particle {
             srcNode.keepAlive();
         }
     }
+
+
 }

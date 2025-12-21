@@ -33,8 +33,8 @@ public class Main extends PApplet {
     String lastDstIp = "N/A";
     String lastDirection = "N/A";
     int lastNumber = 0;
-    int MAX_RAW_LENGTH = 65535;
-    float MIN_P_SIZE = 3;
+    int MAX_RAW_LENGTH = 2000;
+    float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
 
     PGraphics fadeLayer;
@@ -45,7 +45,7 @@ public class Main extends PApplet {
 
     @Override
     public void settings() {
-        size(1000, 800);
+        size(1000, 800, P2D);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class Main extends PApplet {
         particles = new ArrayList<Particle>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
-        fadeLayer = createGraphics(width, height);
+        fadeLayer = createGraphics(width, height, P2D);
 
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
