@@ -30,6 +30,8 @@ public class Main extends PApplet {
     int MAX_RAW_LENGTH = 1500;
     float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
+    int counter = 0;
+
     PGraphics fadeLayer;
     boolean isDebug;
     private String[] TARGET_PREFIXES;
@@ -117,6 +119,7 @@ public class Main extends PApplet {
         text("Packet NO.: " + lastNumber, 20, 170);
         text("Direction: " + lastDirection, 20, 190);
         text("Particle Count: " + particles.size(), 20, 210);
+        text("Particle Total Count: " + counter, 20, 230);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -156,7 +159,9 @@ public class Main extends PApplet {
             synchronized (lock) {
                 // 変更点: 第一引数に this を渡す
                 particles.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
+                counter++;
             }
+            println(theOscMessage.get(4).stringValue() + "->" + theOscMessage.get(5).stringValue(), counter);
 
         } catch (Exception e) {
             println("OSCメッセージの引数処理中にエラー:", e);
@@ -217,6 +222,9 @@ public class Main extends PApplet {
     public void keyPressed() {
         if (key == 'e' || key == 'E') {
             exit();
+        }
+        if (key == 'c' || key == 'C') {
+            counter = 0;
         }
     }
 }
