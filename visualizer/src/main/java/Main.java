@@ -56,10 +56,9 @@ public class Main extends PApplet {
         particles = new ArrayList<Particle>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
-        fadeLayer = createGraphics(width, height, P2D);
+        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
         pixelDensity(displayDensity());
         windowResizable(true);
-
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
         PFont font = createFont("BIZ UDPゴシック", 14);
@@ -69,6 +68,7 @@ public class Main extends PApplet {
     @Override
     public void draw() {
         fadeLayer.beginDraw();
+        fadeLayer.scale(pixelDensity);
         fadeLayer.blendMode(SUBTRACT);
 
         fadeLayer.noStroke();
@@ -92,7 +92,7 @@ public class Main extends PApplet {
         fadeLayer.endDraw();
         background(0);
         blendMode(BLEND);
-        image(fadeLayer, 0, 0);
+        image(fadeLayer, 0, 0, width, height);
 
         for (Node node : nodes.values()) {
             node.separate(nodes);
@@ -209,6 +209,6 @@ public class Main extends PApplet {
 
     @Override
     public void windowResized() {
-        fadeLayer = createGraphics(width, height, P2D);
+        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
     }
 }
