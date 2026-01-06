@@ -4,8 +4,6 @@ import processing.core.PVector;
 
 import java.util.ArrayList;
 
-import static processing.core.PConstants.TWO_PI;
-
 public class Particle {
     PApplet p; // メインのAppletへの参照
     PVector pos;
@@ -95,12 +93,12 @@ public class Particle {
         float d = desired.mag();
         float minSpeed = maxSpeed * 0.3f;
         // ここで少しノイズを加える（ゆらぎ）
-        float angle = p.noise((float) (pos.x * 0.01), (float) (pos.y * 0.01), (float) (p.frameCount * 0.01)) * TWO_PI;
-        PVector wobble = PVector.fromAngle(angle);
-        wobble.mult(0.5F); // 揺れの強さ
+        //float angle = p.noise((float) (pos.x * 0.01), (float) (pos.y * 0.01), (float) (p.frameCount * 0.01)) * TWO_PI;
+        //PVector wobble = PVector.fromAngle(angle);
+        //wobble.mult(0.5F); // 揺れの強さ
 
         PVector steer = PVector.sub(desired, vel);
-        steer.add(wobble); // 操舵力にゆらぎを足す
+        //steer.add(wobble); // 操舵力にゆらぎを足す
 
         desired.normalize();
         desired.mult(maxSpeed);
