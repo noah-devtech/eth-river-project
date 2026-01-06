@@ -4,6 +4,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import oscP5.OscMessage;
 import oscP5.OscP5;
 import processing.core.PApplet;
+import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
@@ -61,6 +62,8 @@ public class Main extends PApplet {
 
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
+        PFont font = createFont("BIZ UDPゴシック", 14);
+        textFont(font);
     }
 
     @Override
