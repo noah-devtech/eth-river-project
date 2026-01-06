@@ -211,4 +211,11 @@ public class Main extends PApplet {
     public void windowResized() {
         fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
     }
+
+    @Override
+    public void keyPressed() {
+        if (key == 'e' || key == 'E') {
+            exit();
+        }
+    }
 }
