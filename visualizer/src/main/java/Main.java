@@ -39,7 +39,7 @@ public class Main extends PApplet {
 
     @Override
     public void settings() {
-        size(1000, 800, P2D);
+        size(1200, 1000, P2D);
     }
 
     @Override
@@ -56,6 +56,8 @@ public class Main extends PApplet {
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
         fadeLayer = createGraphics(width, height, P2D);
+        pixelDensity(displayDensity());
+        windowResizable(true);
 
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
@@ -200,5 +202,10 @@ public class Main extends PApplet {
         Node newNode = new Node(this, ip, pos, isLocal);
         nodes.put(ip, newNode);
         return newNode;
+    }
+
+    @Override
+    public void windowResized() {
+        fadeLayer = createGraphics(width, height, P2D);
     }
 }
