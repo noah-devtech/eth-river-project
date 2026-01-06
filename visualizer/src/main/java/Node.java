@@ -85,9 +85,9 @@ public class Node {
     void update() {
         vel.add(acc);
         vel.limit(maxspeed);
-        pos.add(vel);
+        //pos.add(vel);
         acc.mult(0);
-
+        pos.y += vel.y;
         // p.width, p.height, p.constrain
         pos.x = PApplet.constrain(pos.x, size, p.width - size);
         pos.y = PApplet.constrain(pos.y, size, p.height - size);
