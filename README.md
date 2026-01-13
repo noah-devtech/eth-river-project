@@ -41,8 +41,10 @@
 
 ### Network Infrastructure
 
-本システムは高密度なイベント会場での安定稼働を目的として、以下のエンタープライズ機材で構築する予定です。
-
+本システムはイベント会場での安定稼働を目的として、以下の機材で構築する予定です。
+<!--
+* **WAN:** home 5G HR02 or Speed Wi-Fi HOME 5G L13
+-->
 * **Router:** Yamaha FWX120 (NAPT/L2 Bridge)
 * **AP:** CISCO Aironet AIR-AP1832I-Q-K9
 
