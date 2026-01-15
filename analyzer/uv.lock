@@ -21,6 +21,7 @@ dependencies = [
     { name = "netifaces" },
     { name = "packaging" },
     { name = "pyshark" },
+    { name = "python-dotenv" },
     { name = "python-osc" },
     { name = "termcolor" },
 ]
@@ -32,6 +33,7 @@ requires-dist = [
     { name = "netifaces", specifier = "==0.11.0" },
     { name = "packaging", specifier = "==25.0" },
     { name = "pyshark", specifier = "==0.6" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "python-osc", specifier = "==1.9.3" },
     { name = "termcolor", specifier = "==3.2.0" },
 ]
@@ -144,6 +146,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e1/3c/0e6f306a8a0490bfe58d0683553b4c60c6dfcd2cd2c6a68b46673b177dd0/pyshark-0.6.tar.gz", hash = "sha256:a424d83e0ca6224a96bbe30cd3f89d5491654d783faaaf90adaf45867a0bcb17", size = 27053, upload-time = "2023-04-26T09:33:43.811Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1d/d9/7884ff926c3d05ec65fdf84ac499fb0f088e440d02c606b0ac41645605de/pyshark-0.6-py3-none-any.whl", hash = "sha256:98e8a1ebdcbfbb6e8defd0c96736ea51bf8234339f980b15dd3545f87f5146d4", size = 41359, upload-time = "2023-04-26T09:33:41.022Z" },
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/26/19cadc79a718c5edbec86fd4919a6b6d3f681039a2f6d66d14be94e75fb9/python_dotenv-1.2.1.tar.gz", hash = "sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6", size = 44221, upload-time = "2025-10-26T15:12:10.434Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/1b/a298b06749107c305e1fe0f814c6c74aea7b2f1e10989cb30f544a1b3253/python_dotenv-1.2.1-py3-none-any.whl", hash = "sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61", size = 21230, upload-time = "2025-10-26T15:12:09.109Z" },
 ]
 
 [[package]]
