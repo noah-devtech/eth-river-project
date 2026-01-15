@@ -38,6 +38,9 @@
 | :----------- | :----------------------- | :--------------------------- | :-------------------------------- |
 | **マシン 1** | パケット解析・OSC 送信   | [`analyzer/`](analyzer/)     | Python 3.12+, pyshark, python-osc |
 | **マシン 2** | 可視化・シミュレーション | [`visualizer/`](visualizer/) | Java 17, Processing 4, oscP5      |
+| **マシン 3** |外部Captive Portalサーバー|[]()|docker, Nginx, FastAPI|
+
+※もしマシン1の処理に余裕がある場合マシン3の機能をマシン1に統合することも可能かもしれません。
 
 ### Network Infrastructure
 
