@@ -1,90 +1,64 @@
-# プロジェクト「Ethernet リバー」AI インストラクション
+# Ethernet River Project - Copilot Instructions
 
-このドキュメントは GitHub Copilot（AI）向けのコーディング指示・優先事項・制約の集約です。人間向けの全体像・設計方針は `docs/summary.md` を参照してください（役割分担のため重複は避けています）。
+あなたは、ネットワーク解析とクリエイティブコーディングに精通したシニアエンジニアです。
+このプロジェクト「Ethernet River」の開発において、以下のコンテキストとルールを厳守してコードを提案してください。
 
-関連: `../docs/summary.md`（人間向けトップサマリー）
+## 1. プロジェクト概要とアーキテクチャ
+このプロジェクトは、ネットワークパケットをリアルタイムで「光の川」として可視化するインスタレーション作品です。
 
-## 1. プロジェクトのゴールと最優先事項
+* **全体構成**: 3つの役割を持つマシンが連携します（詳細は `docs/ARCHITECTURE.md` 参照）。
+    1.  **Analyzer (Machine 1)**: パケットキャプチャと解析 (Python)。
+    2.  **Visualizer (Machine 2)**: 解析データの受信と映像描画 (Java/Processing)。
+    3.  **Captive Portal (Machine 3)**: ユーザー参加用Webインターフェース (Docker/Nginx/Python)。
+* **通信プロトコル**: ノード間は **OSC (Open Sound Control)** over UDP (Port: 12345) で通信します。
 
-**目的**: ネットワークパケットをリアルタイムで可視化するインタラクティブ・インスタレーションの制作。
-**最重要視点**:
+## 2. 全体共通ルール
+* **言語**: 回答は**日本語**で行ってください。
+* **情報の裏取り**: ファイルパスや関数名が存在するか不明な場合は、必ず `ls` や `grep` 等のコマンドで確認してから提案してください。
+* **ドキュメント優先**: 実装の提案が `docs/ARCHITECTURE.md` や `docs/INFRASTRUCTURE.md` と矛盾しないようにしてください。
 
-1.  **リアルタイム性**: パケットキャプチャから描画までの遅延を最小限に抑えること。
-2.  **分散処理の連携**: 3 台のマシン（Python/pyshark, Kinect, Processing/Java）間での OSC 通信仕様を厳守すること。
-3.  **パフォーマンス**: マシン 1 (pyshark) とマシン 3 (Processing) の両方で、パフォーマンスのボトルネックを常に意識し、軽量なロジックを優先すること。
+---
 
-開発に関する詳細や補足事項は、docs ディレクトリ内の md ファイルに随時記載していますので、必要に応じてご確認ください。
+## 3. Analyzer (Python) 開発ルール
+* **ディレクトリ**: `analyzer/`
+* **技術スタック**: Python 3.12+, `uv` (パッケージ管理), `pyshark` (tshark wrapper), `python-osc`
+* **コーディングスタイル**:
+    * 型ヒント (Type Hints) を必須とします。
+    * 非同期処理が必要な箇所と、ブロッキングする処理を明確に分けてください。
+* **実装上の重要制約**:
+    * **Pysharkの設定**: パフォーマンス向上のため `use_json=False` (XML/PDMLパース) を基本とし、必要な属性のみを抽出してください。
+    * **属性アクセス**: パケットの属性（例: `packet.http.host`）は存在しない場合があるため、必ず `try-except AttributeError` または `utils.py` のヘルパー関数で安全にアクセスしてください。
+    * **OSC送信**: `docs/ARCHITECTURE.md` で定義されたアドレスパターン（例: `/packet/http`）と引数の順序を厳守してください。
+    * **インフラ**: ヤマハ FWX120 のミラーポートからの入力を前提としており、不要な管理パケット（Telnet, SSH等）は除外するロジックを含めてください。
 
-## 2. 主要な技術スタックと設計上の制約
+---
 
-### 2.1. マシン 1 (パケット解析: Python / analyzer)
+## 4. Visualizer (Java/Processing) 開発ルール
+* **ディレクトリ**: `visualizer/`
+* **技術スタック**: Java 17, Processing 4 (Core), Gradle (Kotlin DSL), `oscP5`, `JOGL`
+* **コーディングスタイル**:
+    * 純粋な `.pde` ではなく、**Gradle プロジェクト構造 (Standard Java Layout)** を維持してください。
+    * `PApplet` を継承した `Main` クラスを中心に実装してください。
+* **実装上の重要制約**:
+    * **描画パフォーマンス**: `draw()` ループ内での `new` オブジェクト生成は極力避け、オブジェクトプールや再利用を検討してください。
+    * **コレクション操作**: パーティクル（Agent）の削除を行う際は、`ArrayList` を**逆順ループ**で回すか、`Iterator` を使用して `ConcurrentModificationException` を防いでください。
+    * **OSC受信**: `oscEvent(OscMessage msg)` メソッド内で、アドレスパターンによる分岐 (`checkAddrPattern`) を行い、型キャスト (`msg.get(0).stringValue()`) を安全に行ってください。
 
--   **ライブラリ**: `pyshark`、`python-osc` を使用。
--   **pyshark 設定**:
-    -   `use_json=False` (デフォルトの XML/PDML パーサーを使用)。
-    -   **TCP**: `tcp.desegment_tcp_streams=TRUE` を必ず有効にすること。`tcp_handler`はこれに基づき `DATA` レイヤーの存在を考慮する必要がある。
--   **属性アクセス**: `pyshark` の `packet` オブジェクトへのアクセスは、`utils.py` にある `get_nested_attr()` で**常に**統一し、None 安全性を確保すること。
--   **通信 (OSC)**:
-    -   解析したメタデータは `python-osc` クライアントを使用し、リアルタイムで即時送信すること。
-    -   **重要**: `main.py` の `TARGET_IP = "127.0.0.1"` は**開発・テスト用の設定**である。本番環境（マシン 3 へのデプロイ時）には、この IP アドレスを**マシン 3 の IP アドレスに書き換える必要がある**ことを常に意識すること。
+---
 
-### 2.2. マシン 3 (可視化: Java / Processing / visualizer)
+## 5. Captive Portal & Infrastructure 開発ルール
+* **ディレクトリ**: `docs/`, (Captive Portalの実装ディレクトリ)
+* **インフラ**:
+    * ネットワーク機器: Yamaha FWX120
+    * 構成: VLANタグベースでのネットワーク分離を行っています。
+* **ネットワーク設定**:
+    * Docker Compose 環境での固定IP割り当てや、ホストネットワーキングの必要性を考慮してください。
 
--   **連携**: Processing 側は `oscP5` ライブラリで OSC データを受信する。
--   **通信方向判定**: 通信の方向 (Upstream/Downstream) の判定は、Processing 側でハードコーディングされた `localNetPrefix` 変数と `ip.startsWith()` を使って行われる。
--   **パーティクル削除**: Processing 側でのパーティクル削除ロジックの提案は、インデックスのずれを防ぐため、`for` ループで**逆順** (`i = list.size() - 1` から) に処理することを推奨すること。
-
-## 3. 現在の最優先 ToDo と懸念点（開発方針）
-
-Copilot によるコード提案は、以下の**未完了タスク**と**懸念点**の解決に貢献するようにしてください。
-
-### 3.1. 最優先 ToDo (P2-1)
-
--   `tcp_handler.py` に、アプリケーション層のチェック**前**に `tcp_layer.flags_syn`, `flags_fin`, `flags_rst` をチェックするロジックを追加すること。
-
-### 3.2. 次期 ToDo
-
--   **QUIC (P3-1)**: QUIC プロトコルの実装と SNI (`packet.quic.sni`など) 取得のためのハンドラ作成。
--   **可視化 (P3-Vis)**: TCP 制御パケット (SYN/FIN/RST など) 受信時の描画ロジック（色、寿命）を Processing 側に追加することを提案すること。
--   **Kinect (P2-II/P2-III)**: マシン 2 の Kinect 連携（物体座標を OSC でマシン 3 に送信）の実装。
--   **ノードベース可視化システム (P4-NodeVis)**:
-    -   **目的**: sourceIP/destinationIP をノードとして扱い、ノード間の通信を粒子（パーティクル）で表現する「川の流れ」的なビジュアライゼーションシステムの実装。
-    -   **レイアウト**: 画面右側にローカルネットワークのノード（例: 192.168.x.x）、画面左側にインターネット側のノード（例: 8.8.8.8 など）を配置。
-    -   **パーティクルシステム**:
-        -   各パケットごとに sourceIP→destinationIP へ向かうパーティクルを生成。
-        -   パーティクルの軌道（path）は描画せず、粒子のみを可視化。
-        -   粒子は直線的には進まず、周囲の粒子と相互作用（引力・斥力、Boids アルゴリズムなど）しながら進行。
-        -   同じノード間の通信が多いほど粒子が密集し、「川の流れ」のように太く見える。
-    -   **合流・分岐の表現**:
-        -   複数のノードからの流れが途中で合流し、大きな流れを形成。
-        -   その後、流れが枝分かれして各目的ノードへ向かう様子を自然に表現。
-    -   **実装方針**:
-        -   Processing (Java) 側でノード管理とパーティクルシステムを実装。
-        -   OSC で受信した sourceIP/destinationIP に基づき、ノードの自動生成・配置。
-        -   パーティクルの動きには Boids アルゴリズム（Separation, Alignment, Cohesion）や Perlin ノイズベースの方向変化を使用。
-        -   ノードは円や点で表現し、位置は固定または動的配置を検討。
-
-### 3.3. 懸念点への配慮
-
--   **パフォーマンス (マシン 1 - Python)**:
-    -   `pyshark` の `sniff_continuously()` ループは、`tshark` プロセスからの出力をポーリングする**シングルスレッド**で動作していると想定される。
-    -   高トラフィック下では、この Python 側の処理ループか、`tshark` プロセス自体が CPU ボトルネックとなり、**パケットロスが発生する危険性がある**。
-    -   したがって、`main.py` のメインループ内や、そこから呼び出されるパイプライン処理 (`link_layer.process` 以下) は、**極めて軽量**に保つ必要がある。
--   **パフォーマンス (マシン 3 - Processing)**:
-    -   マシン 3 (RPi 5) の描画パフォーマンス（多数のパーティクル、物理演算、Kinect からの OSC 受信）が未知数である。
-    -   Processing 側（Java）のコード提案は、効率的かつ軽量な実装（例：逆順ループでの削除）を優先すること。
--   **未処理プロトコル**: `DATA`, `STUN` などの未定義プロトコルは、現状の方針が未定であるため、一時的に `default_handler` で処理するか、無視するロジックを提案すること。
-
-## 4. コーディングスタイルとメンテナンス
-
--   **言語**: Python 3.12 以降の環境で動作するコードを提案すること。
--   **リファクタリング**: `dns_handler.py` や `tcp_handler.py` などに残っている過去のデバッグ用 TODO やリファクタリング TODO の解消を促す、保守性の高いコードを提案すること。
-
-## 5. 参考ドキュメント（優先順）
-
--   [`docs/summary.md`](../docs/summary.md): 人間向けトップサマリー（全体像・設計方針）
--   [`docs/instructions_for_analyzer.md`](../docs/instructions_for_analyzer.md): マシン 1 (pyshark) 開発ガイド
--   [`docs/instructions_for_visualizer.md`](../docs/instructions_for_visualizer.md): マシン 3 (Processing) 開発ガイド
--   [`docs/DECISIONS.md`](../docs/DECISIONS.md): アーキテクチャ設計の決定履歴
--   [`docs/CPU_thread.md`](../docs/CPU_thread.md): パフォーマンスとスレッドに関する考察
--   [`docs/TEST_DATA.md`](../docs/TEST_DATA.md): テストデータの仕様
+## 6. コミットメッセージ規約
+提案するコミットメッセージは以下の形式に従ってください（Conventional Commits）。
+* `feat`: 新機能
+* `fix`: バグ修正
+* `refactor`: リファクタリング
+* `docs`: ドキュメントのみの変更
+* `chore`: ビルド設定やツールの変更
+例: `feat(analyzer): Add HTTPS SNI extraction logic`
