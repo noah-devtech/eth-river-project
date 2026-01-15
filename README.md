@@ -16,7 +16,7 @@
 ## Demo
 
 ![eth-river-demo](eth-river.gif)
-  
+
 ## Tech Stack
 
 <div style="white-space: nowrap;">
@@ -73,3 +73,31 @@ cd visualizer
   * [ソフトウェア的なアーキテクチャーについて](docs/ARCHITECTURE.md)
   * [ネットワーク周りのインフラについて](docs/INFRASTRUCTURE.md)
   * [TODOリスト](docs/TODO.md)
+
+## Notes
+### **About This Project**
+
+このプロジェクトはインタラクティブなインスタレーション展示専用に設計されています。そのため、アーキテクチャは特定のネットワークトポロジー（Yamaha FWX120 + Cisco Aironet）に高度に最適化されています。
+
+> This project is specifically designed for interactive installation use. Therefore, the architecture is highly optimized for a specific network topology (Yamaha FWX120 + Cisco Aironet).
+
+### **Tested Environment**
+
+* Analyzer (Machine 1)
+  * OS: Raspberry Pi OS (Kernel 6.12, aarch64)
+  * Python: 3.12.x or higher
+  * Dependencies:
+    * pyshark: 0.6
+
+      To running pyshark, `tshark` (part of Wireshark) must be installed on the system.
+
+    And other dependencies listed in `analyzer/uv.lock`
+  * Hardware: Raspberry Pi 4B (8GB)
+* Visualizer (Machine 2)
+  * OS: Windows 11 Home (25H2, x64)
+  * Java: OpenJDK 17.0.x
+
+  And other dependencies listed in `visualizer/build.gradle.kts`
+  * Processing: 4.4.10
+
+* Network Hardware: Yamaha FWX120, Cisco Aironet 1832I

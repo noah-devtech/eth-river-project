@@ -1,25 +1,18 @@
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
+import io.github.cdimascio.dotenv.Dotenv;
 import oscP5.OscMessage;
 import oscP5.OscP5;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Main extends PApplet {
 
-    private static final String[] TARGET_PREFIXES = {
-            "10.0.0.0/8",
-            "172.0.0.0/12",
-            "192.168.0.0/16",
-            "127.0.0.1/32"
-    };
     private final Object lock = new Object();
     OscP5 oscP5;
     int listenPort;
@@ -36,8 +29,9 @@ public class Main extends PApplet {
     int MAX_RAW_LENGTH = 2000;
     float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
-
     PGraphics fadeLayer;
+    boolean isDebug;
+    private String[] TARGET_PREFIXES;
 
     public static void main(String[] args) {
         PApplet.main("Main");
@@ -50,7 +44,13 @@ public class Main extends PApplet {
 
     @Override
     public void setup() {
-        loadConfig();
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+
+
+        listenPort = Integer.parseInt(dotenv.get("LISTENING_PORT", "12345"));
+        String prefixes = dotenv.get("TARGET_PREFIXES", "192.168.1.0/24");
+        TARGET_PREFIXES = prefixes.split(",");
+        isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
         background(0);
         particles = new ArrayList<Particle>();
         oscP5 = new OscP5(this, listenPort);
@@ -156,23 +156,6 @@ public class Main extends PApplet {
 
         } catch (Exception e) {
             println("OSCメッセージの引数処理中にエラー:", e);
-        }
-    }
-
-    private void loadConfig() {
-        Properties props = new Properties();
-        try (InputStream input = Main.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (input == null) {
-                println("設定ファイル (config.properties) が見つかりません。");
-                listenPort = 12345;
-            } else {
-                props.load(input);
-                String portStr = props.getProperty("app.listenPort");
-                listenPort = Integer.parseInt(portStr);
-            }
-        } catch (Exception e) {
-            println("設定ファイルの読み込み中にエラーが発生しました: " + e.getMessage());
-            listenPort = 12345;
         }
     }
 
