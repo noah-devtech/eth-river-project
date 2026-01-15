@@ -1,6 +1,6 @@
 # プロジェクト全体 TODO リスト
 
-このファイルはEthernet River Projectの全体的なタスク・進捗管理用です。
+このファイルはEthernet Riverの全体的なタスク・進捗管理用です。
 
 ---
 
