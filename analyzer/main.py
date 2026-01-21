@@ -34,13 +34,14 @@ def main():
     print("[*] Press Ctrl+C to stop capturing.")
     if is_read_mode:
         capture_session = pyshark.FileCapture(
-            read_file, override_prefs={"tcp.desegment_tcp_streams": "TRUE"}
+            read_file,
+            override_prefs={"tcp.desegment_tcp_streams": "FALSE"},
         )
     else:
         capture_session = pyshark.LiveCapture(
             interface=NETWORK_INTERFACE,
             display_filter=display_filter,
-            override_prefs={"tcp.desegment_tcp_streams": "TRUE"},
+            override_prefs={"tcp.desegment_tcp_streams": "FALSE"},
         )
     try:
         if is_read_mode:
