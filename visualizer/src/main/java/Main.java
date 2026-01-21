@@ -26,7 +26,7 @@ public class Main extends PApplet {
     String lastDstIp = "N/A";
     String lastDirection = "N/A";
     int lastNumber = 0;
-    int MAX_RAW_LENGTH = 2000;
+    int MAX_RAW_LENGTH = 1500;
     float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
     PGraphics fadeLayer;
