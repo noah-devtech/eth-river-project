@@ -25,13 +25,13 @@ graph LR
     LAN1_4 --> RPi_USB
     LAN1_1 --> CiscoAP[AP: Cisco Aironet/Catalyst]
     LAN1_1 -- Mirroring(VLAN20のみ) --> LAN1_4
-    
+
     %% Clients
     CiscoAP -.-> Smartphones[Guest Devices]
 
     %% External Captive Portal
     LAN1_2 --- CP_Server[External Server]
-    
+
     %% flow for Auth
     CiscoAP[Cisco AP] -- Auth Redirect --> CP_Server[Docker: Nginx/FastAPI]
 ```
@@ -104,10 +104,10 @@ Service(30) → Guest(20)の戻りのパケットはステートフルインス�
 
 #### SSID構成
 
-| SSID名       | 紐付けVLAN | 認証方式              | 備考                                       |
-| ------------ | ---------- | --------------------- | ------------------------------------------ |
-| {Name}_Admin | VLAN 10    | WPA2/3-PSK            | 管理者・設備用。Captive Portalなし。       |
-| {Name}_Guest | VLAN 20    | Open/External WebAuth | ゲスト用。接続後、VLAN30のポータルへ誘導。 |
+| SSID名              | 紐付けVLAN | 認証方式              | 備考                                       |
+| ------------------- | ---------- | --------------------- | ------------------------------------------ |
+| EthernetRiver-Admin | VLAN 10    | WPA2/3-PSK            | 管理者・設備用。Captive Portalなし。       |
+| EthernetRiver-Guest | VLAN 20    | Open/External WebAuth | ゲスト用。接続後、VLAN30のポータルへ誘導。 |
 
 #### 詳細仕様
 
