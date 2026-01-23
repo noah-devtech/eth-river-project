@@ -1,10 +1,12 @@
 # pipeline/link_layer.py
+from typing import Any, Dict, List
+
 from utils import get_nested_attr
 
 from . import network_layer
 
 
-def process(packet, layers, context):
+def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー2 (イーサネット) の処理。
     """

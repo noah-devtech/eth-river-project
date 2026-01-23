@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from utils import format_output, get_nested_attr
 
 from ..application_layer import dns_handler, http_handler, tls_handler
@@ -11,7 +13,7 @@ APPLICATION_HANDLERS = {
 # TODO 再送や並び替えの処理の実装
 
 
-def process(packet, layers, context):
+def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー4 (TCP) の処理。
     """

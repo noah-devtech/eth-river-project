@@ -1,16 +1,16 @@
 # pipeline/network_layer.py
-from .transport_layer import udp_handler, tcp_handler
+from typing import Any, Dict, List
+
+from utils import get_nested_attr
+
 from .application_layer import default_handler
-from utils import format_output, get_nested_attr
+from .transport_layer import tcp_handler, udp_handler
 
 # プロトコル番号と担当ハンドラーの対応表
-TRANSPORT_HANDLERS = {
-    "17": udp_handler,
-    "6": tcp_handler
-}
+TRANSPORT_HANDLERS = {"17": udp_handler, "6": tcp_handler}
 
 
-def process(packet, layers, context):
+def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー3 (IP) の処理。
     """
