@@ -119,11 +119,10 @@ public class Main extends PApplet {
         try {
             lastProtocol = theOscMessage.get(0).stringValue();
             lastLength = theOscMessage.get(1).intValue();
-            lastDetails = theOscMessage.get(2).stringValue();
-            lastNumber = theOscMessage.get(3).intValue();
-            lastSrcIp = theOscMessage.get(4).stringValue();
-            lastDstIp = theOscMessage.get(5).stringValue();
-            println(theOscMessage.get(4).stringValue() + "->" + theOscMessage.get(5).stringValue());
+            lastNumber = theOscMessage.get(2).intValue();
+            lastSrcIp = theOscMessage.get(3).stringValue();
+            lastDstIp = theOscMessage.get(4).stringValue();
+            println(theOscMessage.get(3).stringValue() + "->" + theOscMessage.get(4).stringValue());
             lastDirection = packetDirection(lastSrcIp, lastDstIp);
 
             int particleColor;
