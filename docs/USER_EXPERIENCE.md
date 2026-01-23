@@ -19,7 +19,7 @@ Ethernet Riverは、ネットワークパケットという「見えないデジ
   * AnalyzerからVisualizerにOSCメッセージが送信される。
 * **Visual Output:**
   * **(Nothing)**
-  * Visualizerにはまだ名前が紐付いていないため、「同意されてない通信」と判断しパーティクルやノードは一切表示しない。
+  * Visualizerにはまだ名前が紐付いていないため、「同意されていない通信」と判断しパーティクルやノードは一切表示しない。
 
 ## Phase 2: Identification
 
