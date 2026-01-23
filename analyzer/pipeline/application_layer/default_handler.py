@@ -1,8 +1,10 @@
 # pipeline/transport_layer/application_layer/default_handler.py
+from typing import Any, Dict, List
+
 from utils import format_output, get_nested_attr, has_nested_attr
 
 
-def process(packet, layers, context):
+def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     未対応のプロトコルやポートの処理。ここでパイプラインは終了。
     """

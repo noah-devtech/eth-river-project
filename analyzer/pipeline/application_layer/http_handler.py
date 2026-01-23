@@ -1,7 +1,9 @@
+from typing import Any, Dict, List
+
 from utils import format_output, no_higher_layer
 
 
-def process(packet, layers, context):
+def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー7 (HTTP) の処理。
     """
