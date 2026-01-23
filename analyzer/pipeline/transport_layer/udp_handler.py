@@ -1,4 +1,6 @@
 # pipeline/transport_layer/udp_handler.py
+from typing import Any, Dict, List
+
 from utils import format_output, get_nested_attr
 
 from ..application_layer import dns_handler
@@ -9,7 +11,7 @@ APPLICATION_HANDLERS = {
 }
 
 
-def process(packet, layers, context):
+def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー4 (UDP) の処理。
     """

@@ -14,7 +14,7 @@ from utils import (
 load_dotenv()
 display_filter = os.getenv("DISPLAY_FILTER", "ip.version == 4")
 is_read_mode = os.getenv("IS_READ_MODE", "False").lower() == "true"
-read_file = "test-data\\pcap\\test.pcapng"
+read_file = "test-data/pcap/test.pcapng"
 NETWORK_INTERFACE = os.getenv("NETWORK_INTERFACE", "Wi-Fi")
 TARGET_IP = os.getenv("TARGET_IP", "127.0.0.1")
 TARGET_PORT = int(os.getenv("TARGET_PORT", "12345"))
@@ -23,7 +23,7 @@ OSC_CLIENT = udp_client.SimpleUDPClient(TARGET_IP, TARGET_PORT)
 print(f"[*] OSC sending to {TARGET_IP}:{TARGET_PORT}")
 
 
-def main():
+def main() -> None:
     lan_network = get_lan_network()
     if not lan_network:
         print("[!] Could not determine local network. Exiting.")

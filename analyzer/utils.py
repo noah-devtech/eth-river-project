@@ -1,5 +1,6 @@
 import ipaddress
 import socket
+from typing import Any, Optional
 
 # netifacesがあれば、より正確なサブネットマスクを取得できる
 try:
@@ -10,7 +11,7 @@ except ImportError:
     has_netifaces = False
 
 
-def get_lan_network():
+def get_lan_network() -> Optional[ipaddress.IPv4Network]:
     """
     実行中マシンのIPアドレスとサブネットマスクから、
     所属するLANのネットワークオブジェクトを取得する。
@@ -27,6 +28,8 @@ def get_lan_network():
     netmask = None
     if has_netifaces:
         try:
+            import netifaces  # Ensure netifaces is imported in this scope
+
             iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
             netmask = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["netmask"]
         except Exception:
@@ -39,10 +42,13 @@ def get_lan_network():
         )
 
     lan_network = ipaddress.ip_network(f"{local_ip}/{netmask}", strict=False)
-    return lan_network
+    if isinstance(lan_network, ipaddress.IPv4Network):
+        return lan_network
+    else:
+        return None
 
 
-def get_nested_attr(obj, attr_string, default=None):
+def get_nested_attr(obj: Any, attr_string: str, default: Any = None) -> Any:
     """
     ネストした属性を安全に取得するユーティリティ関数。
     """
@@ -56,21 +62,21 @@ def get_nested_attr(obj, attr_string, default=None):
     return current_obj
 
 
-def has_nested_attr(obj, attr_string, default=None):
+def has_nested_attr(obj: Any, attr_string: str, default: Any = None) -> bool:
     """
     ネストした属性があるかどうかを安全に確認し返す。
 
     Args:
-        obj (_type_): _description_
-        attr_string (_type_): _description_
-        default (_type_, optional): _description_. Defaults to None.
+        obj: 確認対象のオブジェクト
+        attr_string: ドット区切りの属性パス
+        default: デフォルト値（使用されません）
     """
     if get_nested_attr(obj, attr_string) is None:
         return False
     return True
 
 
-def format_output(context, protocol):
+def format_output(context: dict[str, Any], protocol: str) -> None:
     """
     最終的な出力形式を統一する関数。
     """
@@ -110,17 +116,16 @@ def format_output(context, protocol):
             print(f"[!] OSC send error: {e}")
 
 
-def no_higher_layer(layers, layer_name):
+def no_higher_layer(layers: list[Any], layer_name: str) -> None:
     """
     担当するレイヤーじゃないレイヤーが来たときに呼び出される
 
     Args:
-        layers (_type_): _description_
-        layer_name (_type_): _description_
+        layers: レイヤーのリスト
+        layer_name: レイヤー名
     """
 
     if not len(layers) == 0 and has_nested_attr(layers[0], "layer_name"):
         print(f"higher layer is {get_nested_attr(layers[0], 'layer_name')}")
     else:
         print(f"This is not {layer_name} data")
-    return

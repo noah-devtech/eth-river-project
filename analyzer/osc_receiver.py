@@ -1,9 +1,9 @@
 import argparse
-from pythonosc import dispatcher
-from pythonosc import osc_server
+
+from pythonosc import dispatcher, osc_server
 
 
-def print_message_handler(address, *args):
+def print_message_handler(address: str, *args: object) -> None:
     """
     受信したOSCメッセージをコンソールに表示するハンドラ
     """
@@ -18,7 +18,7 @@ def print_message_handler(address, *args):
         print("  (データなし)")
 
 
-def main(ip, port):
+def main(ip: str, port: int) -> None:
     # OSCメッセージのアドレスパターンに応じて関数を割り当てる
     disp = dispatcher.Dispatcher()
 
