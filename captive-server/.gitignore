@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+.env
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/
+
+# Docker
+docker-compose.override.yml
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
