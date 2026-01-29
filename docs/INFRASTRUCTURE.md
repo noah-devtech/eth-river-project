@@ -4,36 +4,83 @@
 
 ```mermaid
 graph LR
+
+  subgraph core_network [Core Network]
     subgraph FWX120 [Router: Yamaha FWX120]
       LAN2[LAN2:WAN ports]
-      subgraph LAN1[LAN1:LAN ports]
-        direction TB
+    subgraph LAN1[LAN1:LAN ports]
+      direction TB
         LAN1_1[Ports:1]
         LAN1_2[Ports:2]
         LAN1_3[Ports:3]
         LAN1_4[Ports:4]
+    end
+  end
+
+  subgraph BSW [Buffalo BS-GS2008P PoE+ Smart Switch]
+    subgraph L2Switch [L2 Switch]
+      direction TB
+        BSW_1[Ports:1]
+        BSW_2[Ports:2]
+        BSW_3[Ports:3]
+        BSW_4[Ports:4]
+        BSW_5[Ports:5]
+        BSW_6[Ports:6]
+        BSW_7[Ports:7]
+        BSW_8[Ports:8]
       end
     end
-    subgraph RPi[Raspberry Pi 4B]
-      RPi_eth0
-      RPi_USB
+  end
+
+  subgraph Main_PC [メインPC]
+    subgraph OS_Internal [OS]
+      direction TB
+        subgraph App_Layer
+          Web[Docker: Nginx/FastAPI/SQLite<br> Captive Portal Server]
+          Analyzer[Python: Packet Sniffer]
+          Visual[Processing: Visual Art]
+        end
+        Analyzer -- "OSC (127.0.0.1)" --> Visual
+        Web -- "OSC (127.0.0.1)" --> Visual
     end
-    Internet((Internet)) --> Router[ホームルーター <br> or <br> モバイルルーター]
-    Router -- DMZ --> LAN2
-    LAN2 -- NAPT --> LAN1
-    LAN1_3 --> RPi_eth0
-    LAN1_4 --> RPi_USB
-    LAN1_1 --> CiscoAP[AP: Cisco Aironet/Catalyst]
-    LAN1_1 -- Mirroring(VLAN20のみ) --> LAN1_4
+    subgraph NICs [Network Interface Cards]
+      direction TB
+        NIC_Onboard[Onboard NIC]
+        NIC_331T_1[331T Port 1]
+        NIC_331T_2[331T Port 2]
+        NIC_331T_3[331T Port 3]
+        NIC_331T_4[331T Port 4]
+    end
+  end
 
-    %% Clients
-    CiscoAP -.-> Smartphones[Guest Devices]
+  Internet((Internet)) --> Router[ホームルーター or モバイルルーター]
+  Router -- DMZ --> LAN2
+  LAN2 -- NAPT --> LAN1
+  BSW_6 --> NIC_Onboard
+  %% trunk connection
+  LAN1_1 --|VLAN 10,20,30|--> BSW_8
 
-    %% External Captive Portal
-    LAN1_2 --- CP_Server[External Server]
+  %% Captive Portal Server
+  LAN1_3 --|VLAN 30|--> NIC_331T_3
+  NIC_331T_3 --> Web
 
-    %% flow for Auth
-    CiscoAP[Cisco AP] -- Auth Redirect --> CP_Server[Docker: Nginx/FastAPI]
+  %% Packet Sniffing
+  NIC_331T_2 --> Analyzer
+  BSW_7 --|VLAN 20|--> NIC_331T_2
+  BSW_8 -- "Mirroring(VLAN20のみ)" --> BSW_7
+
+  subgraph Guest_Access
+    BSW_1 -- "Port 1 (PoE+)" --- AP1[Cisco 1832I]
+    BSW_2 -- "Port 2 (PoE+)" --- AP2[Cisco 1832I]
+    BSW_3 -- "Port 3 (PoE+)" --- AP3[Cisco 1832I]
+    AP1 -.-> WiFi_Guest((Visitor WiFi <br> VLAN 20))
+    AP2 -.-> WiFi_Guest((Visitor WiFi <br> VLAN 20))
+    AP3 -.-> WiFi_Guest((Visitor WiFi <br> VLAN 20))
+    AP1 -.-> WiFi_Management((Management WiFi <br> VLAN 10))
+    AP2 -.-> WiFi_Management((Management WiFi <br> VLAN 10))
+    AP3 -.-> WiFi_Management((Management WiFi <br> VLAN 10))
+  end
+  BSW_8 --|VLAN 10,20|-->BSW_1 & BSW_2 & BSW_3
 ```
 
 ## Hardware Selection
