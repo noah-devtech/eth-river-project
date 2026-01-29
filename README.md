@@ -1,6 +1,5 @@
 # Ethernet River: パケット可視化インスタレーション
 
-
 ## Overview
 
 > **Visualizing network traffic flow using OSC protocol.**
@@ -10,7 +9,7 @@
 * **Purpose:** 目に見えないネットワーク通信の量と流れを、直感的に理解可能な形で物理空間に投影すること。
 * **Architecture:**
   * **Capture:** Raspberry Pi上で `Pyshark` を用い、パケットをリアルタイム解析。
-  * **Communication:** 解析データをOpenSound Control (OSC) プロトコルで描画用PCへ転送。
+  * **Communication:** 解析データをOpenSound Control (OSC) プロトコルで転送。
   * **Visualization:** Java (Processing) 側で受信データに基づきパーティクルを生成・描画。
 
 ## Demo
@@ -34,38 +33,42 @@
 
 ## Architecture
 
-| マシン       | 役割                     | ディレクトリ                 | 主な技術                          |
-| :----------- | :----------------------- | :--------------------------- | :-------------------------------- |
-| **マシン 1** | パケット解析・OSC 送信   | [`analyzer/`](analyzer/)     | Python 3.12+, pyshark, python-osc |
-| **マシン 2** | 可視化・シミュレーション | [`visualizer/`](visualizer/) | Java 17, Processing 4, oscP5      |
-| **マシン 3** |外部Captive Portalサーバー|[]()|docker, Nginx, FastAPI|
-
-※ もしマシン1の処理に余裕がある場合マシン3の機能をマシン1に統合することも可能かもしれません。
+| プログラム       | 役割                       | ディレクトリ                         | 主な技術                          |
+| :--------------- | :------------------------- | :----------------------------------- | :-------------------------------- |
+| **プログラム 1** | パケット解析・OSC 送信     | [`analyzer/`](analyzer/)             | Python 3.12+, pyshark, python-osc |
+| **プログラム 2** | 可視化・シミュレーション   | [`visualizer/`](visualizer/)         | Java 17, Processing 4, oscP5      |
+| **プログラム 3** | 外部Captive Portalサーバー | [`captive-server/`](captive-server/) | docker, Nginx, FastAPI, SQLite    |
 
 ### Network Infrastructure
 
 本システムはイベント会場での安定稼働を目的として、以下の機材で構築する予定です。
-<!--
-* **WAN:** home 5G HR02 or Speed Wi-Fi HOME 5G L13
--->
-* **Router:** Yamaha FWX120 (NAPT/L2 Bridge)
-* **AP:** CISCO Aironet AIR-AP1832I-Q-K9
+
+* **WAN:** Speed Wi-Fi HOME 5G L13
+* **Router:** Yamaha FWX120 (NAPT/Port Mirroring)
+* **AP:** Cisco Aironet AIR-AP1832I-Q-K9
+* **Switch:** Buffalo BS-GS2008P (PoE+ Smart Switch)
 
 ## How to use?
 
-### マシン 1（パケット解析: Python）
+### プログラム 1（パケット解析: Python）
 
 ```sh
 cd analyzer
 uv run main.py
 ```
 
-### マシン 2（可視化: Java/Processing）
+### プログラム 2（可視化: Java/Processing）
 
 ```sh
 cd visualizer
 ./gradlew build
 ./gradlew run
+```
+
+### プログラム 3（Captive Portalサーバー: Docker）
+
+```bash
+# Now developing...
 ```
 
 ## Documentation Links
@@ -75,16 +78,18 @@ cd visualizer
   * [TODOリスト](docs/TODO.md)
 
 ## Notes
+
 ### **About This Project**
 
-このプロジェクトはインタラクティブなインスタレーション展示専用に設計されています。そのため、アーキテクチャは特定のネットワークトポロジー（Yamaha FWX120 + Cisco Aironet）に高度に最適化されています。
+このプロジェクトはインタラクティブなインスタレーション展示専用に設計されています。そのため、アーキテクチャは特定のネットワークトポロジー（Yamaha FWX120 + Cisco Aironet + Buffalo BS-GS2008P）に高度に最適化されています。
 
-> This project is specifically designed for interactive installation use. Therefore, the architecture is highly optimized for a specific network topology (Yamaha FWX120 + Cisco Aironet).
+> This project is specifically designed for interactive installation use. Therefore, the architecture is highly optimized for a specific network topology (Yamaha FWX120 + Cisco Aironet + Buffalo BS-GS2008P).
 
 ### **Tested Environment**
 
-* Analyzer (Machine 1)
-  * OS: Raspberry Pi OS (Kernel 6.12, aarch64)
+* Analyzer (Program 1)
+  * Hardware: Raspberry Pi 4B (8GB)/ dynabook RZ/MW(i7-1360P, 32GB)
+  * OS: Raspberry Pi OS (Kernel 6.12, aarch64)/ Windows 11 (25H2, x64)
   * Python: 3.12.x or higher
   * Dependencies:
     * pyshark: 0.6
@@ -92,12 +97,12 @@ cd visualizer
       To running pyshark, `tshark` (part of Wireshark) must be installed on the system.
 
     And other dependencies listed in `analyzer/uv.lock`
-  * Hardware: Raspberry Pi 4B (8GB)
-* Visualizer (Machine 2)
-  * OS: Windows 11 Home (25H2, x64)
+* Visualizer (Program 2)
+  * Hardware: dynabook RZ/MW(i7-1360P, 32GB, Xe Graphics)
+  * OS: Windows 11 (25H2, x64)
   * Java: OpenJDK 17.0.x
 
   And other dependencies listed in `visualizer/build.gradle.kts`
   * Processing: 4.4.10
 
-* Network Hardware: Yamaha FWX120, Cisco Aironet 1832I
+* Network Hardware: Yamaha FWX120, Cisco Aironet 1832I, Buffalo BS-GS2008P

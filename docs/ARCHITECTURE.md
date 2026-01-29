@@ -79,6 +79,7 @@ sequenceDiagram
   * Infrastructure: Docker / Docker Compose
   * Web Server: Nginx (Reverse Proxy & Static Files)
   * App Server: Python (FastAPI) + uv
+  * Database: SQLite
 
 ```mermaid
 graph LR
@@ -128,7 +129,7 @@ Cisco Mobility Express (WLC) からのリダイレクト仕様。
 
 * ポート: 12345
 
-#### マシン 1 → マシン 2
+#### プログラム 1 → プログラム 2
 
 * アドレス: `/packet/{protocol_name}`
 * 引数:
@@ -142,7 +143,7 @@ Cisco Mobility Express (WLC) からのリダイレクト仕様。
 * `/packet/http`: `[src_ip, dst_ip, size, timestamp]`
 * `/packet/tls`: `[src_ip, dst_ip, size, timestamp]`
 
-#### マシン 3 → マシン 2
+#### プログラム 3 → プログラム 2
 
 * アドレス: `/update/node/name`
 * 引数:
