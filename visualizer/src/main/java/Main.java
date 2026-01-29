@@ -200,8 +200,7 @@ public class Main extends PApplet {
         y = random(height * 0.1f, height * 0.9f);
 
         if (isLocal) {
-            //x = random(width * 0.8f, width * 0.9f);
-            x = width * 0.9f;
+            x = random(width * 0.8f, width * 0.9f);
         } else {
             x = random(width * 0.1f, width * 0.2f);
         }
