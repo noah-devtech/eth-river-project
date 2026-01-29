@@ -87,11 +87,17 @@ graph LR
 
 * Router (Yamaha FWX120)
   * コンシューマー機では耐えられないNATセッション数を捌くため。
-  * ミラーポートを用いてパケットキャプチャーをするため。
+  * ステートフルインスペクションとポリシーフィルターで柔軟な通信制御を行うため。
 
 * AP (Cisco Aironet/Catalyst)
   * 干渉対策と接続安定性のため。
   * Captive Portalを用いた情報収集と個人情報収集に同意してもらうため。
+
+* Switch (Buffalo BS-GS2008P PoE+ Smart Switch)
+  * PoE+給電対応でAPを動作させるため。
+  * VLAN対応でセグメント分離を行うため。
+  * ミラーポート機能を用いてパケットキャプチャーをするため。
+  * Web GUIで簡単に設定できるため。
 
 ## Network Settings
 
