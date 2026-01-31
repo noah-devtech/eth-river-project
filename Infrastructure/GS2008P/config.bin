@@ -1,0 +1,96 @@
+! -- start of BS-GS2008P config --
+! -- Software Version : 1.0.12.05 -- 
+!
+enable
+config
+!
+hostname BS<DEVICE_MAC_ADDR>
+ip routing
+username_adv "<ENCRYPTED_PASSWORD_REMOVED>"
+!
+ip address 192.168.xxx.254 255.255.255.0
+!
+sntp date 2014/1/1
+sntp time 20:40:5
+!
+spanning-tree mst version mstp
+spanning-tree mst name <DEVICE_MAC_ADDR_DASH>
+!
+dhcp-relay
+dhcp-relay mode vlan
+!
+dns add-server 8.8.8.8
+dns add-server 8.8.4.4
+!
+proxy port 3128
+proxy https port 3128
+!
+mirror group 1 dst-port 7 src-port 8
+mirror group 2 dst-port 3 src-port 4
+mirror group 1 enable
+!
+system mac-security disable
+system learn-limit disable
+!
+interface vlan1
+member 4-5,8
+untagged 4-5,8
+ip address 192.168.xxx.254 255.255.255.0
+!
+interface vlan10
+member 1-3,5-6,8
+untagged 1-3,5-6
+name Trust
+management
+ip address 10.0.10.254 255.255.255.0
+dhcp relay-to 10.0.10.1
+dhcp-relay state unicast
+!
+interface vlan20
+member 1-3,7-8
+untagged 7
+name Guest
+management
+ip address 10.0.20.254 255.255.255.0
+dhcp relay-to 10.0.20.1
+dhcp-relay state unicast
+!
+interface vlan30
+member 1-3,8
+name Service
+management
+ip address 10.0.30.254 255.255.255.0
+dhcp relay-to 10.0.30.1
+dhcp-relay state unicast
+exit
+!
+interface GigabitEthernet0/1
+PVID 10
+name "Port 1"
+!
+interface GigabitEthernet0/2
+PVID 10
+name "Port 2"
+!
+interface GigabitEthernet0/3
+PVID 10
+name "Port 3"
+!
+interface GigabitEthernet0/4
+name "Port 4"
+!
+interface GigabitEthernet0/5
+name "Port 5"
+!
+interface GigabitEthernet0/6
+PVID 10
+name "Port 6"
+!
+interface GigabitEthernet0/7
+name "Port 7"
+!
+interface GigabitEthernet0/8
+name "Port 8"
+exit
+! -- end of configuration --
+
