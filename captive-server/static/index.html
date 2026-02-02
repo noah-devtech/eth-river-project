@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Wi-Fi Login</title>
+    <script>
+        function prepareSubmit() {
+            const params = new URLSearchParams(window.location.search);
+
+            // switch_url が無い場合
+            if (!params.has('switch_url')) {
+                alert("エラー: 認証コントローラの情報が見つかりません。Wi-Fiに再接続してください。");
+                return;
+            }
+
+            // MEの戻り先URL
+            document.getElementById('switch_url').value = params.get('switch_url');
+            document.getElementById('redirect').value = params.get('redirect');
+            document.getElementById('authForm').submit();
+        }
+    </script>
+</head>
+
+<body>
+    <div class="login-card">
+        <h1>Wi-Fi Auth</h1>
+        <form id="authForm" method="post" action="/auth">
+            <label>ユーザー名</label>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="hidden" id="switch_url" name="switch_url">
+            <input type="hidden" id="redirect" name="redirect">
+
+            <button type="button" onclick="prepareSubmit()">ログイン</button>
+        </form>
+    </div>
+</body>
+
+</html>

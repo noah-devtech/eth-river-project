@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <title>Authenticating</title>
+    <meta charset="UTF-8">
+</head>
+
+<body onload="document.forms[0].submit();">
+    <p>ネットワークを認証中です。自動的に切り替わります</p>
+
+    <form method="post" action="{{ switch_url }}">
+        <input type="hidden" name="buttonClicked" value="4">
+        <input type="hidden" name="username" value="guest">
+        <input type="hidden" name="password" value="guest">
+        <input type="hidden" name="redirect_url" value="{{ redirect }}">
+        <input type="hidden" name="err_flag" value="0">
+        <noscript>
+            <p>JavaScriptが無効です。ボタンを押して進んでください。</p>
+            <input type="submit" value="続行">
+        </noscript>
+    </form>
+</body>
+
+</html>
