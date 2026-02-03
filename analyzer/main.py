@@ -18,6 +18,7 @@ read_file = "test-data/pcap/test.pcapng"
 NETWORK_INTERFACE = os.getenv("NETWORK_INTERFACE", "Wi-Fi")
 TARGET_IP = os.getenv("TARGET_IP", "127.0.0.1")
 TARGET_PORT = int(os.getenv("TARGET_PORT", "12345"))
+counter = 0
 
 OSC_CLIENT = udp_client.SimpleUDPClient(TARGET_IP, TARGET_PORT)
 print(f"[*] OSC sending to {TARGET_IP}:{TARGET_PORT}")
