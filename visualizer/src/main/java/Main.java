@@ -1,6 +1,8 @@
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.index.quadtree.Quadtree;
 import oscP5.OscMessage;
 import oscP5.OscP5;
 import processing.core.PApplet;
@@ -8,16 +10,17 @@ import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Main extends PApplet {
 
     private final Object lock = new Object();
     OscP5 oscP5;
     int listenPort;
-    ArrayList<Particle> particles;
+    CopyOnWriteArrayList<Particle> particles;
     Map<String, Node> nodes;
     String lastAddress = "N/A";
     String lastProtocol = "N/A";
@@ -29,6 +32,7 @@ public class Main extends PApplet {
     float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
     int counter = 0;
+    Quadtree quadtree;
 
     PGraphics fadeLayer;
     boolean isDebug;
@@ -53,7 +57,7 @@ public class Main extends PApplet {
         TARGET_PREFIXES = prefixes.split(",");
         isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
         background(0);
-        particles = new ArrayList<Particle>();
+        particles = new CopyOnWriteArrayList<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
         fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
@@ -76,12 +80,18 @@ public class Main extends PApplet {
         fadeLayer.rect(0, 0, width, height);
 
         fadeLayer.blendMode(ADD);
-
-
+        quadtree = new Quadtree();
+        for (Particle p : particles) {
+            Envelope env = new Envelope(p.pos.x, p.pos.x, p.pos.y, p.pos.y);
+            quadtree.insert(env, p);
+        }
         synchronized (lock) {
+            float r = 50.0f;
             for (int i = particles.size() - 1; i >= 0; i--) {
                 Particle p = particles.get(i);
-                p.update(particles);
+                Envelope env = new Envelope(p.pos.x - r, p.pos.x + r, p.pos.y - r, p.pos.y + r);
+                List nighters = quadtree.query(env);
+                p.update(nighters);
                 p.draw(fadeLayer);
                 p.makeNodeAlive();
                 if (p.isDead()) {

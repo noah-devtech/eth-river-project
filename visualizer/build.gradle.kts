@@ -24,6 +24,8 @@ val processingVersion = "4.4.10"
 val joglVersion = "2.5.0"
 
 dependencies {
+    // 空間分割
+    implementation("org.locationtech.jts:jts-core:1.20.0")
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
     implementation("de.sojamo:oscp5:0.9.8")
     implementation("com.github.seancfoley:ipaddress:5.5.1")
