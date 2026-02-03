@@ -1,8 +1,6 @@
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import io.github.cdimascio.dotenv.Dotenv;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.index.quadtree.Quadtree;
 import oscP5.OscMessage;
 import oscP5.OscP5;
 import processing.core.PApplet;
@@ -19,6 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Main extends PApplet {
 
     private final Object lock = new Object();
+    private final List<Particle> queryBuffer = new ArrayList<>(500);
     OscP5 oscP5;
     int listenPort;
     ArrayList<Particle> particles;
@@ -34,8 +33,7 @@ public class Main extends PApplet {
     float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
     int counter = 0;
-    Quadtree quadtree;
-
+    SimpleQuadTree quadTree;
     PGraphics fadeLayer;
     boolean isDebug;
     private String[] TARGET_PREFIXES;
@@ -86,21 +84,23 @@ public class Main extends PApplet {
         fadeLayer.rect(0, 0, width, height);
 
         fadeLayer.blendMode(ADD);
-        quadtree = new Quadtree();
+        SimpleQuadTree.resetPool();
+        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 10, 5);
         for (Particle p : particles) {
-            Envelope env = new Envelope(p.pos.x, p.pos.x, p.pos.y, p.pos.y);
-            quadtree.insert(env, p);
+            quadTree.insert(p);
         }
-        float r = 50.0f;
-        for (int i = particles.size() - 1; i >= 0; i--) {
-            Particle p = particles.get(i);
-            Envelope env = new Envelope(p.pos.x - r, p.pos.x + r, p.pos.y - r, p.pos.y + r);
-            List<Particle> nighters = quadtree.query(env);
-            p.update(nighters);
-            p.draw(fadeLayer);
-            p.makeNodeAlive();
-            if (p.isDead()) {
-                particles.remove(i);
+        synchronized (lock) {
+            float r = 50.0f;
+            for (int i = particles.size() - 1; i >= 0; i--) {
+                Particle p = particles.get(i);
+                queryBuffer.clear();
+                quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
+                p.update(queryBuffer);
+                p.draw(fadeLayer);
+                p.makeNodeAlive();
+                if (p.isDead()) {
+                    particles.remove(i);
+                }
             }
         }
         fadeLayer.endDraw();
