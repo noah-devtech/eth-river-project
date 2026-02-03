@@ -2,12 +2,11 @@ import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Particle {
     PApplet p; // メインのAppletへの参照
     PVector pos;
-    PVector prevPos;
     PVector vel;
     PVector acc;
     Node targetNode;
@@ -32,12 +31,12 @@ public class Particle {
         this.acc = new PVector(0, 0);
     }
 
-    void update(ArrayList<Particle> particles) {
-        history.add(pos.copy());
+    void update(List neighbors) {
+        history.add(pos);
         PVector steer = seek(targetNode.pos);
-        PVector separation = separate(particles);
-        PVector cohesion = cohesion(particles);
-        PVector alignment = alignment(particles);
+        PVector separation = separate(neighbors);
+        PVector cohesion = cohesion(neighbors);
+        PVector alignment = alignment(neighbors);
         applyForce(steer);
         applyForce(separation.mult(2.5f));
         applyForce(alignment.mult(0.8f));
@@ -116,11 +115,12 @@ public class Particle {
         return steer;
     }
 
-    PVector separate(ArrayList<Particle> particles) {
+    PVector separate(List<Particle> neighbors) {
         float desiredSeparation = this.size * 0.1f;
         PVector sum = new PVector(0, 0);
         int count = 0;
-        for (Particle other : particles) {
+        for (Particle other : neighbors) {
+            if (other == this) continue;
             float d = PVector.dist(pos, other.pos);
             if ((d > 0) && (d < desiredSeparation)) {
                 PVector diff = PVector.sub(pos, other.pos);
@@ -138,12 +138,13 @@ public class Particle {
         return sum;
     }
 
-    PVector cohesion(ArrayList<Particle> particles) {
+    PVector cohesion(List<Particle> neighbors) {
         float neighborhoodRadius = this.size * 10.0f;
         PVector centerOfMass = new PVector(0, 0);
         int count = 0;
 
-        for (Particle other : particles) {
+        for (Particle other : neighbors) {
+            if (other == this) continue;
             float d = PVector.dist(pos, other.pos);
 
             if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
@@ -160,12 +161,13 @@ public class Particle {
         return new PVector(0, 0);
     }
 
-    PVector alignment(ArrayList<Particle> particles) {
+    PVector alignment(List neighbors) {
         float neighborhoodRadius = this.size * 5.0f;
         PVector sumVelocity = new PVector(0, 0);
         int count = 0;
-
-        for (Particle other : particles) {
+        for (Object obj : neighbors) {
+            Particle other = (Particle) obj;
+            if (other == this) continue;
             float d = PVector.dist(pos, other.pos);
 
             if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
@@ -189,8 +191,7 @@ public class Particle {
     }
 
     void applyForce(PVector force) {
-        PVector f = force.copy();
-        acc.add(f);
+        acc.add(force);
     }
 
     public void makeNodeAlive() {
