@@ -10,17 +10,19 @@ import processing.core.PFont;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Main extends PApplet {
 
     private final Object lock = new Object();
     OscP5 oscP5;
     int listenPort;
-    CopyOnWriteArrayList<Particle> particles;
+    ArrayList<Particle> particles;
+    ConcurrentLinkedQueue<Particle> newParticleQueue = new ConcurrentLinkedQueue<>();
     Map<String, Node> nodes;
     String lastAddress = "N/A";
     String lastProtocol = "N/A";
@@ -57,7 +59,8 @@ public class Main extends PApplet {
         TARGET_PREFIXES = prefixes.split(",");
         isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
         background(0);
-        particles = new CopyOnWriteArrayList<>();
+        particles = new ArrayList<>(5000);
+        newParticleQueue = new ConcurrentLinkedQueue<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
         fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
@@ -71,6 +74,9 @@ public class Main extends PApplet {
 
     @Override
     public void draw() {
+        while (!newParticleQueue.isEmpty()) {
+            particles.add(newParticleQueue.poll());
+        }
         fadeLayer.beginDraw();
         fadeLayer.scale(pixelDensity);
         fadeLayer.blendMode(SUBTRACT);
@@ -85,18 +91,16 @@ public class Main extends PApplet {
             Envelope env = new Envelope(p.pos.x, p.pos.x, p.pos.y, p.pos.y);
             quadtree.insert(env, p);
         }
-        synchronized (lock) {
-            float r = 50.0f;
-            for (int i = particles.size() - 1; i >= 0; i--) {
-                Particle p = particles.get(i);
-                Envelope env = new Envelope(p.pos.x - r, p.pos.x + r, p.pos.y - r, p.pos.y + r);
-                List nighters = quadtree.query(env);
-                p.update(nighters);
-                p.draw(fadeLayer);
-                p.makeNodeAlive();
-                if (p.isDead()) {
-                    particles.remove(i);
-                }
+        float r = 50.0f;
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            Envelope env = new Envelope(p.pos.x - r, p.pos.x + r, p.pos.y - r, p.pos.y + r);
+            List<Particle> nighters = quadtree.query(env);
+            p.update(nighters);
+            p.draw(fadeLayer);
+            p.makeNodeAlive();
+            if (p.isDead()) {
+                particles.remove(i);
             }
         }
         fadeLayer.endDraw();
@@ -163,7 +167,7 @@ public class Main extends PApplet {
 
             synchronized (lock) {
                 // 変更点: 第一引数に this を渡す
-                particles.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
+                newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
                 counter++;
             }
 
