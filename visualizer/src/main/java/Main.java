@@ -75,6 +75,11 @@ public class Main extends PApplet {
         while (!newParticleQueue.isEmpty()) {
             particles.add(newParticleQueue.poll());
         }
+        if (keyPressed && key == 'f') {
+            for (int i = 0; i < 50; i++) {
+                spawnDebugParticle();
+            }
+        }
         fadeLayer.beginDraw();
         fadeLayer.scale(pixelDensity);
         fadeLayer.blendMode(SUBTRACT);
@@ -233,5 +238,13 @@ public class Main extends PApplet {
         if (key == 'c' || key == 'C') {
             counter = 0;
         }
+    }
+
+    void spawnDebugParticle() {
+        if (nodes.isEmpty()) return;
+        List<Node> nodeList = new ArrayList<>(nodes.values());
+        Node src = nodeList.get((int) random(nodeList.size()));
+        Node dst = nodeList.get((int) random(nodeList.size()));
+        particles.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
     }
 }
