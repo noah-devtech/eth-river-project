@@ -116,6 +116,7 @@ public class Main extends PApplet {
         text("Packet NO: " + lastNumber, 20, 150);
         text("Particle Count: " + particles.size(), 20, 170);
         text("Particle Total Count: " + counter, 20, 190);
+        text("Frame Rate: " + String.format("%.2f", frameRate) + " fps", 20, 210);
     }
 
     void oscEvent(OscMessage theOscMessage) {
