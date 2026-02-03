@@ -22,10 +22,8 @@ public class Main extends PApplet {
     String lastAddress = "N/A";
     String lastProtocol = "N/A";
     int lastLength = 0;
-    String lastDetails = "N/A";
     String lastSrcIp = "N/A";
     String lastDstIp = "N/A";
-    String lastDirection = "N/A";
     int lastNumber = 0;
     int MAX_RAW_LENGTH = 1500;
     float MIN_P_SIZE = 1;
@@ -113,13 +111,11 @@ public class Main extends PApplet {
         text("Last Address: " + lastAddress, 20, 50);
         text("Protocol: " + lastProtocol, 20, 70);
         text("Length: " + lastLength, 20, 90);
-        text("Details: " + lastDetails, 20, 110);
-        text("Source IP: " + lastSrcIp, 20, 130);
-        text("Dest IP: " + lastDstIp, 20, 150);
-        text("Packet NO.: " + lastNumber, 20, 170);
-        text("Direction: " + lastDirection, 20, 190);
-        text("Particle Count: " + particles.size(), 20, 210);
-        text("Particle Total Count: " + counter, 20, 230);
+        text("Source IP: " + lastSrcIp, 20, 110);
+        text("Dest IP: " + lastDstIp, 20, 130);
+        text("Packet NO: " + lastNumber, 20, 150);
+        text("Particle Count: " + particles.size(), 20, 170);
+        text("Particle Total Count: " + counter, 20, 190);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -131,7 +127,6 @@ public class Main extends PApplet {
             lastSrcIp = theOscMessage.get(3).stringValue();
             lastDstIp = theOscMessage.get(4).stringValue();
             println(theOscMessage.get(3).stringValue() + "->" + theOscMessage.get(4).stringValue());
-            lastDirection = packetDirection(lastSrcIp, lastDstIp);
 
             int particleColor;
             particleColor = switch (lastProtocol) {
@@ -161,7 +156,6 @@ public class Main extends PApplet {
                 particles.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
                 counter++;
             }
-            println(theOscMessage.get(4).stringValue() + "->" + theOscMessage.get(5).stringValue(), counter);
 
         } catch (Exception e) {
             println("OSCメッセージの引数処理中にエラー:", e);
