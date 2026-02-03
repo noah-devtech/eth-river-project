@@ -17,8 +17,7 @@ public class Particle {
     float size;
     float slowingRadius = 200; // この距離に入ると減速を開始
     Node srcNode;
-    ArrayList<PVector> history = new ArrayList<PVector>();
-    int maxHistory = 5;
+    RingBuffer history = new RingBuffer(5);
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
@@ -35,9 +34,6 @@ public class Particle {
 
     void update(ArrayList<Particle> particles) {
         history.add(pos.copy());
-        if (history.size() > maxHistory) {
-            history.remove(0);
-        }
         PVector steer = seek(targetNode.pos);
         PVector separation = separate(particles);
         PVector cohesion = cohesion(particles);
@@ -73,9 +69,13 @@ public class Particle {
         pg.strokeWeight(1.0f);
 
         pg.beginShape();
-        for (PVector pos : history) {
-            pg.vertex(pos.x, pos.y);
+        for (int i = 0; i < history.size(); i++) {
+            PVector pos = history.get(i);
+            if (pos != null) {
+                pg.vertex(pos.x, pos.y);
+            }
         }
+
         pg.vertex(pos.x, pos.y);
         pg.endShape();
     }
