@@ -5,6 +5,8 @@ import processing.core.PVector;
 import java.util.List;
 
 public class Particle {
+    private final PVector diff = new PVector(0, 0);
+    private final PVector steering = new PVector(0, 0);
     PApplet p; // メインのAppletへの参照
     PVector pos;
     PVector vel;
@@ -31,16 +33,10 @@ public class Particle {
         this.acc = new PVector(0, 0);
     }
 
-    void update(List neighbors) {
+    void update(List<Particle> neighbors) {
         history.add(pos);
-        PVector steer = seek(targetNode.pos);
-        PVector separation = separate(neighbors);
-        PVector cohesion = cohesion(neighbors);
-        PVector alignment = alignment(neighbors);
-        applyForce(steer);
-        applyForce(separation.mult(2.5f));
-        applyForce(alignment.mult(0.8f));
-        applyForce(cohesion.mult(0.5f));
+        applyForce(seek(targetNode.pos));
+        applyForce(applyFlocking(neighbors).mult(0.5f));
 
 
         float dist = PVector.dist(targetNode.pos, pos);
@@ -83,7 +79,7 @@ public class Particle {
         float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < (this.size * 0.75f);
+        return d < (this.size);
     }
 
     PVector seek(PVector target) {
@@ -110,84 +106,68 @@ public class Particle {
             desired.mult(maxSpeed);
         }
 
-        //PVector steer = PVector.sub(desired, vel);
         steer.limit(maxForce);
         return steer;
     }
 
-    PVector separate(List<Particle> neighbors) {
-        float desiredSeparation = this.size * 0.1f;
-        PVector sum = new PVector(0, 0);
-        int count = 0;
+    PVector applyFlocking(List<Particle> neighbors) {
+        steering.set(0, 0);
+        diff.set(0, 0);
+        if (neighbors.isEmpty()) return steering;
+        float sepRadius = this.size * 0.25f;
+        float cohRadius = this.size * 10.0f;
+        float aliRadius = this.size * 10.0f;
+
+        PVector sepSum = new PVector(0, 0);
+        PVector cohSum = new PVector(0, 0);
+        PVector aliSum = new PVector(0, 0);
+
+        int countSep = 0;
+        int countCoh = 0;
+        int countAli = 0;
+
         for (Particle other : neighbors) {
             if (other == this) continue;
             float d = PVector.dist(pos, other.pos);
-            if ((d > 0) && (d < desiredSeparation)) {
-                PVector diff = PVector.sub(pos, other.pos);
+            if (d <= 0) continue;
+            if (d < sepRadius) {
+                diff.set(pos);
+                diff.sub(other.pos);
+                diff.normalize();
                 diff.div(d);
-                sum.add(diff);
-                count++;
+                sepSum.add(diff);
+                countSep++;
+            }
+            if (other.targetNode == this.targetNode) {
+                if (d < cohRadius) {
+                    cohSum.add(other.pos);
+                    countCoh++;
+                }
+                if (d < aliRadius) {
+                    aliSum.add(other.vel);
+                    countAli++;
+                }
             }
         }
-        if (count > 0) {
-            sum.div(count);
-            sum.normalize();
-            sum.mult(this.maxSpeed);
-            sum.limit(this.maxForce);
+        if (countSep > 0) {
+            sepSum.div(countSep);
+            sepSum.setMag(maxSpeed);
+            sepSum.limit(maxForce);
+            steering.add(sepSum.mult(2.5f));
         }
-        return sum;
-    }
-
-    PVector cohesion(List<Particle> neighbors) {
-        float neighborhoodRadius = this.size * 10.0f;
-        PVector centerOfMass = new PVector(0, 0);
-        int count = 0;
-
-        for (Particle other : neighbors) {
-            if (other == this) continue;
-            float d = PVector.dist(pos, other.pos);
-
-            if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
-                centerOfMass.add(other.pos);
-                count++;
-            }
+        if (countCoh > 0) {
+            cohSum.div(countCoh);
+            steering.add(seek(cohSum).mult(0.8f));
         }
-
-        if (count > 0) {
-            centerOfMass.div(count);
-            return seek(centerOfMass);
+        if (countAli > 0) {
+            aliSum.div(countAli);
+            aliSum.setMag(maxSpeed);
+            aliSum.mult(maxSpeed);
+            aliSum.sub(vel);
+            aliSum.limit(maxForce);
+            steering.add(aliSum.mult(0.5f));
         }
-
-        return new PVector(0, 0);
-    }
-
-    PVector alignment(List neighbors) {
-        float neighborhoodRadius = this.size * 5.0f;
-        PVector sumVelocity = new PVector(0, 0);
-        int count = 0;
-        for (Object obj : neighbors) {
-            Particle other = (Particle) obj;
-            if (other == this) continue;
-            float d = PVector.dist(pos, other.pos);
-
-            if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
-                sumVelocity.add(other.vel);
-                count++;
-            }
-        }
-
-        if (count > 0) {
-            sumVelocity.div(count);
-            sumVelocity.normalize();
-            sumVelocity.mult(maxSpeed);
-
-            PVector steer = PVector.sub(sumVelocity, vel);
-            steer.limit(maxForce); // 操舵力を制限
-            return steer;
-        }
-
-        return new PVector(0, 0);
-
+        return steering;
     }
 
     void applyForce(PVector force) {
