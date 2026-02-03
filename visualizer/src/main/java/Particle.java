@@ -7,6 +7,10 @@ import java.util.List;
 public class Particle {
     private final PVector diff = new PVector(0, 0);
     private final PVector steering = new PVector(0, 0);
+    private final PVector sepSum = new PVector(0, 0);
+    private final PVector cohSum = new PVector(0, 0);
+    private final PVector aliSum = new PVector(0, 0);
+    private final PVector desired = new PVector(0, 0);
     PApplet p; // メインのAppletへの参照
     PVector pos;
     PVector vel;
@@ -83,7 +87,8 @@ public class Particle {
     }
 
     PVector seek(PVector target) {
-        PVector desired = PVector.sub(target, pos);
+        desired.set(target);
+        desired.sub(pos);
 
         float d = desired.mag();
         float minSpeed = maxSpeed * 0.3f;
@@ -92,7 +97,7 @@ public class Particle {
         //PVector wobble = PVector.fromAngle(angle);
         //wobble.mult(0.5F); // 揺れの強さ
 
-        PVector steer = PVector.sub(desired, vel);
+        desired.sub(vel);
         //steer.add(wobble); // 操舵力にゆらぎを足す
 
         desired.normalize();
@@ -106,21 +111,21 @@ public class Particle {
             desired.mult(maxSpeed);
         }
 
-        steer.limit(maxForce);
-        return steer;
+        desired.limit(maxForce);
+        return desired;
     }
 
     PVector applyFlocking(List<Particle> neighbors) {
         steering.set(0, 0);
         diff.set(0, 0);
         if (neighbors.isEmpty()) return steering;
+        sepSum.set(0, 0);
+        cohSum.set(0, 0);
+        aliSum.set(0, 0);
+
         float sepRadius = this.size * 0.25f;
         float cohRadius = this.size * 10.0f;
         float aliRadius = this.size * 10.0f;
-
-        PVector sepSum = new PVector(0, 0);
-        PVector cohSum = new PVector(0, 0);
-        PVector aliSum = new PVector(0, 0);
 
         int countSep = 0;
         int countCoh = 0;
