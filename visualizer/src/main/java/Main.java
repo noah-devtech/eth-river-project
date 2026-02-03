@@ -49,7 +49,7 @@ public class Main extends PApplet {
 
 
         listenPort = Integer.parseInt(dotenv.get("LISTENING_PORT", "12345"));
-        String prefixes = dotenv.get("TARGET_PREFIXES", "192.168.1.0/24");
+        String prefixes = dotenv.get("TARGET_PREFIXES", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16");
         TARGET_PREFIXES = prefixes.split(",");
         isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
         background(0);
