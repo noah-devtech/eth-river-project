@@ -26,7 +26,7 @@ public class RingBuffer {
     }
 
     public PVector get(int i) {
-        if ((i < 0) || (capacity < i)) {
+        if (i < 0 || i >= capacity) {
             throw new ArrayIndexOutOfBoundsException();
         }
         int desireIndex = (head - i - 1 + capacity) % capacity;
