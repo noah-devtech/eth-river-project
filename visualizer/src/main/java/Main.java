@@ -9,15 +9,19 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Main extends PApplet {
 
     private final Object lock = new Object();
+    private final List<Particle> queryBuffer = new ArrayList<>(500);
     OscP5 oscP5;
     int listenPort;
     ArrayList<Particle> particles;
+    ConcurrentLinkedQueue<Particle> newParticleQueue = new ConcurrentLinkedQueue<>();
     Map<String, Node> nodes;
     String lastAddress = "N/A";
     String lastProtocol = "N/A";
@@ -29,7 +33,7 @@ public class Main extends PApplet {
     float MIN_P_SIZE = 1;
     float MAX_P_SIZE = 30;
     int counter = 0;
-
+    SimpleQuadTree quadTree;
     PGraphics fadeLayer;
     boolean isDebug;
     private String[] TARGET_PREFIXES;
@@ -53,7 +57,8 @@ public class Main extends PApplet {
         TARGET_PREFIXES = prefixes.split(",");
         isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
         background(0);
-        particles = new ArrayList<Particle>();
+        particles = new ArrayList<>(5000);
+        newParticleQueue = new ConcurrentLinkedQueue<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
         fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
@@ -67,6 +72,14 @@ public class Main extends PApplet {
 
     @Override
     public void draw() {
+        while (!newParticleQueue.isEmpty()) {
+            particles.add(newParticleQueue.poll());
+        }
+        if (keyPressed && key == 'f') {
+            for (int i = 0; i < 50; i++) {
+                spawnDebugParticle();
+            }
+        }
         fadeLayer.beginDraw();
         fadeLayer.scale(pixelDensity);
         fadeLayer.blendMode(SUBTRACT);
@@ -76,12 +89,18 @@ public class Main extends PApplet {
         fadeLayer.rect(0, 0, width, height);
 
         fadeLayer.blendMode(ADD);
-
-
+        SimpleQuadTree.resetPool();
+        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 10, 5);
+        for (Particle p : particles) {
+            quadTree.insert(p);
+        }
         synchronized (lock) {
+            float r = 50.0f;
             for (int i = particles.size() - 1; i >= 0; i--) {
                 Particle p = particles.get(i);
-                p.update(particles);
+                queryBuffer.clear();
+                quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
+                p.update(queryBuffer);
                 p.draw(fadeLayer);
                 p.makeNodeAlive();
                 if (p.isDead()) {
@@ -154,7 +173,7 @@ public class Main extends PApplet {
 
             synchronized (lock) {
                 // 変更点: 第一引数に this を渡す
-                particles.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
+                newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
                 counter++;
             }
 
@@ -220,5 +239,13 @@ public class Main extends PApplet {
         if (key == 'c' || key == 'C') {
             counter = 0;
         }
+    }
+
+    void spawnDebugParticle() {
+        if (nodes.isEmpty()) return;
+        List<Node> nodeList = new ArrayList<>(nodes.values());
+        Node src = nodeList.get((int) random(nodeList.size()));
+        Node dst = nodeList.get((int) random(nodeList.size()));
+        particles.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
     }
 }
