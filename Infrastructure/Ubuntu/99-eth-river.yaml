@@ -1,0 +1,44 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    # --- Port 1: Analyzer用
+    enp6s0f0:
+      dhcp4: no
+      accept-ra: no
+      link-local: []
+
+    # --- Port 2: Service/Management用
+    enp6s0f1:
+      dhcp4: no
+      # Native VLAN (192.168.xxx.0/24)
+      addresses:
+        - 192.168.xxx.250/24
+
+    # --- Onboard NIC (念のためDHCPを有効)
+    enp15s0:
+      dhcp4: true
+      optional: true
+
+  vlans:
+    # --- VLAN20 Python Analyzer用
+    vlan20_sniff:
+      id: 20
+      link: enp6s0f0
+      dhcp4: no
+
+    # --- Port2 -> VLAN10,30
+    vlan10:
+      id: 10
+      link: enp6s0f1
+      addresses: [10.0.10.250/24]
+      routes:
+        - to: default
+          via: 10.0.10.1
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1, 10.0.10.1]
+
+    vlan30:
+      id: 30
+      link: enp6s0f1
+      addresses: [10.0.30.250/24]
