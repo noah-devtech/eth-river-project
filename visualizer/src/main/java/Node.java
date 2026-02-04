@@ -34,13 +34,18 @@ public class Node {
     }
 
     void separate(Map<String, Node> nodes) {
-        float desiredseparation = size * 2.0f;
+        float desiredSeparation;
+        if (this.isLocal) {
+            desiredSeparation = size * 5.0f;
+        } else {
+            desiredSeparation = size * 10.0f;
+        }
         PVector steer = new PVector(0, 0, 0);
         int count = 0;
 
         for (Node other : nodes.values()) {
             float d = PVector.dist(pos, other.pos);
-            if ((d > 0) && (d < desiredseparation)) {
+            if ((d > 0) && (d < desiredSeparation)) {
                 PVector diff = PVector.sub(pos, other.pos);
                 diff.normalize();
                 diff.div(d);
@@ -87,10 +92,9 @@ public class Node {
         vel.limit(maxspeed);
         pos.add(vel);
         acc.mult(0);
-
         // p.width, p.height, p.constrain
         pos.x = PApplet.constrain(pos.x, size, p.width - size);
-        pos.y = PApplet.constrain(pos.y, size, p.height - size);
+        pos.y = PApplet.constrain(pos.y, size, p.height - size - 20);
     }
 
     public void display() {

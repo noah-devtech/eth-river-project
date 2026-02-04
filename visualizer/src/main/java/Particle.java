@@ -2,14 +2,17 @@ import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PVector;
 
-import java.util.ArrayList;
-
-import static processing.core.PConstants.TWO_PI;
+import java.util.List;
 
 public class Particle {
+    private final PVector diff = new PVector(0, 0);
+    private final PVector steering = new PVector(0, 0);
+    private final PVector sepSum = new PVector(0, 0);
+    private final PVector cohSum = new PVector(0, 0);
+    private final PVector aliSum = new PVector(0, 0);
+    private final PVector desired = new PVector(0, 0);
     PApplet p; // メインのAppletへの参照
     PVector pos;
-    PVector prevPos;
     PVector vel;
     PVector acc;
     Node targetNode;
@@ -19,8 +22,7 @@ public class Particle {
     float size;
     float slowingRadius = 200; // この距離に入ると減速を開始
     Node srcNode;
-    ArrayList<PVector> history = new ArrayList<PVector>();
-    int maxHistory = 5;
+    RingBuffer history = new RingBuffer(5);
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
@@ -35,19 +37,10 @@ public class Particle {
         this.acc = new PVector(0, 0);
     }
 
-    void update(ArrayList<Particle> particles) {
-        history.add(pos.copy());
-        if (history.size() > maxHistory) {
-            history.remove(0);
-        }
-        PVector steer = seek(targetNode.pos);
-        PVector separation = separate(particles);
-        PVector cohesion = cohesion(particles);
-        PVector alignment = alignment(particles);
-        applyForce(steer);
-        applyForce(separation.mult(2.5f));
-        applyForce(alignment.mult(0.8f));
-        applyForce(cohesion.mult(0.5f));
+    void update(List<Particle> neighbors) {
+        history.add(pos);
+        applyForce(seek(targetNode.pos));
+        applyForce(applyFlocking(neighbors).mult(0.5f));
 
 
         float dist = PVector.dist(targetNode.pos, pos);
@@ -75,9 +68,13 @@ public class Particle {
         pg.strokeWeight(1.0f);
 
         pg.beginShape();
-        for (PVector pos : history) {
-            pg.vertex(pos.x, pos.y);
+        for (int i = 0; i < history.size(); i++) {
+            PVector pos = history.get(i);
+            if (pos != null) {
+                pg.vertex(pos.x, pos.y);
+            }
         }
+
         pg.vertex(pos.x, pos.y);
         pg.endShape();
     }
@@ -86,21 +83,22 @@ public class Particle {
         float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < (this.size * 0.75f);
+        return d < (this.size);
     }
 
     PVector seek(PVector target) {
-        PVector desired = PVector.sub(target, pos);
+        desired.set(target);
+        desired.sub(pos);
 
         float d = desired.mag();
         float minSpeed = maxSpeed * 0.3f;
         // ここで少しノイズを加える（ゆらぎ）
-        float angle = p.noise((float) (pos.x * 0.01), (float) (pos.y * 0.01), (float) (p.frameCount * 0.01)) * TWO_PI;
-        PVector wobble = PVector.fromAngle(angle);
-        wobble.mult(0.5F); // 揺れの強さ
+        //float angle = p.noise((float) (pos.x * 0.01), (float) (pos.y * 0.01), (float) (p.frameCount * 0.01)) * TWO_PI;
+        //PVector wobble = PVector.fromAngle(angle);
+        //wobble.mult(0.5F); // 揺れの強さ
 
-        PVector steer = PVector.sub(desired, vel);
-        steer.add(wobble); // 操舵力にゆらぎを足す
+        desired.sub(vel);
+        //steer.add(wobble); // 操舵力にゆらぎを足す
 
         desired.normalize();
         desired.mult(maxSpeed);
@@ -113,86 +111,72 @@ public class Particle {
             desired.mult(maxSpeed);
         }
 
-        //PVector steer = PVector.sub(desired, vel);
-        steer.limit(maxForce);
-        return steer;
+        desired.limit(maxForce);
+        return desired;
     }
 
-    PVector separate(ArrayList<Particle> particles) {
-        float desiredSeparation = this.size * 0.1f;
-        PVector sum = new PVector(0, 0);
-        int count = 0;
-        for (Particle other : particles) {
+    PVector applyFlocking(List<Particle> neighbors) {
+        steering.set(0, 0);
+        diff.set(0, 0);
+        if (neighbors.isEmpty()) return steering;
+        sepSum.set(0, 0);
+        cohSum.set(0, 0);
+        aliSum.set(0, 0);
+
+        float sepRadius = this.size * 0.25f;
+        float cohRadius = this.size * 10.0f;
+        float aliRadius = this.size * 10.0f;
+
+        int countSep = 0;
+        int countCoh = 0;
+        int countAli = 0;
+
+        for (Particle other : neighbors) {
+            if (other == this) continue;
             float d = PVector.dist(pos, other.pos);
-            if ((d > 0) && (d < desiredSeparation)) {
-                PVector diff = PVector.sub(pos, other.pos);
+            if (d <= 0) continue;
+            if (d < sepRadius) {
+                diff.set(pos);
+                diff.sub(other.pos);
+                diff.normalize();
                 diff.div(d);
-                sum.add(diff);
-                count++;
+                sepSum.add(diff);
+                countSep++;
+            }
+            if (other.targetNode == this.targetNode) {
+                if (d < cohRadius) {
+                    cohSum.add(other.pos);
+                    countCoh++;
+                }
+                if (d < aliRadius) {
+                    aliSum.add(other.vel);
+                    countAli++;
+                }
             }
         }
-        if (count > 0) {
-            sum.div(count);
-            sum.normalize();
-            sum.mult(this.maxSpeed);
-            sum.limit(this.maxForce);
+        if (countSep > 0) {
+            sepSum.div(countSep);
+            sepSum.setMag(maxSpeed);
+            sepSum.limit(maxForce);
+            steering.add(sepSum.mult(2.5f));
         }
-        return sum;
-    }
-
-    PVector cohesion(ArrayList<Particle> particles) {
-        float neighborhoodRadius = this.size * 10.0f;
-        PVector centerOfMass = new PVector(0, 0);
-        int count = 0;
-
-        for (Particle other : particles) {
-            float d = PVector.dist(pos, other.pos);
-
-            if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
-                centerOfMass.add(other.pos);
-                count++;
-            }
+        if (countCoh > 0) {
+            cohSum.div(countCoh);
+            steering.add(seek(cohSum).mult(0.8f));
         }
-
-        if (count > 0) {
-            centerOfMass.div(count);
-            return seek(centerOfMass);
+        if (countAli > 0) {
+            aliSum.div(countAli);
+            aliSum.setMag(maxSpeed);
+            aliSum.mult(maxSpeed);
+            aliSum.sub(vel);
+            aliSum.limit(maxForce);
+            steering.add(aliSum.mult(0.5f));
         }
-
-        return new PVector(0, 0);
-    }
-
-    PVector alignment(ArrayList<Particle> particles) {
-        float neighborhoodRadius = this.size * 5.0f;
-        PVector sumVelocity = new PVector(0, 0);
-        int count = 0;
-
-        for (Particle other : particles) {
-            float d = PVector.dist(pos, other.pos);
-
-            if ((d > 0) && (d < neighborhoodRadius) && (other.targetNode == this.targetNode)) {
-                sumVelocity.add(other.vel);
-                count++;
-            }
-        }
-
-        if (count > 0) {
-            sumVelocity.div(count);
-            sumVelocity.normalize();
-            sumVelocity.mult(maxSpeed);
-
-            PVector steer = PVector.sub(sumVelocity, vel);
-            steer.limit(maxForce); // 操舵力を制限
-            return steer;
-        }
-
-        return new PVector(0, 0);
-
+        return steering;
     }
 
     void applyForce(PVector force) {
-        PVector f = force.copy();
-        acc.add(f);
+        acc.add(force);
     }
 
     public void makeNodeAlive() {

@@ -104,9 +104,9 @@ def format_output(context: dict[str, Any], protocol: str) -> None:
             data_to_send = [
                 protocol.lower().replace(" ", "_"),  # 1. プロトコル名 (String)
                 int(context.get("length", 0)),  # 2. パケット長 (Int)
-                int(context.get("packet_number", 0)),  # 4. パケットナンバー(Int)
-                context.get("source_ip", "?"),  # 5. 送信元IP (String)
-                context.get("dest_ip", "?"),  # 6. 宛先IP (String)
+                int(context.get("packet_number", 0)),  # 3. パケットナンバー(Int)
+                context.get("source_ip", "?"),  # 4. 送信元IP (String)
+                context.get("dest_ip", "?"),  # 5. 宛先IP (String)
             ]
 
             # OSCメッセージを送信
