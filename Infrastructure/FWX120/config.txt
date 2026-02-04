@@ -14,10 +14,8 @@
 #
 # System configuration
 #
-
-login password doremi
-administrator password doremi
-
+# login password <SET_SECURELY_ON_DEVICE>       # 本番パスワードはリポジトリに保存しないこと
+# administrator password <SET_SECURELY_ON_DEVICE>  # 実機で個別に設定すること
 #
 # IP configuration
 #
