@@ -1,0 +1,446 @@
+#	FWX120 Rev.11.03.29 (Mon Dec  2 10:55:54 2019)
+#		MAC Address : ac:44:f2:3e:c7:9f, ac:44:f2:3e:c7:a0
+#		Memory 256Mbytes, 2LAN
+#		main:  FWX120 ver=00 serial=S42046399 MAC-Address=ac:44:f2:3e:c7:9f MAC-Address=ac:44:f2:3e:c7:a0
+#
+#	Reporting Date: Jan 31 15:29:13 2026
+
+# If you want to clear ALL configuration to default,
+#  remove `#' of next line.
+
+#clear configuration
+
+
+#
+# System configuration
+#
+# login password <SET_SECURELY_ON_DEVICE>       # 本番パスワードはリポジトリに保存しないこと
+# administrator password <SET_SECURELY_ON_DEVICE>  # 実機で個別に設定すること
+#
+# IP configuration
+#
+
+ip route default gateway dhcp lan2
+ip keepalive 1 icmp-echo 10 5 dhcp lan2
+
+#
+# IPv6 configuration
+#
+
+
+#
+# Bridge configuration
+#
+
+
+#
+# Ethernet Filter configuration
+#
+
+
+#
+# VLAN Port Mapping configuration
+#
+
+
+#
+# LAN configuration
+#
+
+ip lan1 address 192.168.xxx.1/24
+vlan lan1/1 802.1q vid=10 name=Trust
+ip lan1/1 address 10.0.10.1/24
+vlan lan1/2 802.1q vid=20 name=Guest
+ip lan1/2 address 10.0.20.1/24
+vlan lan1/3 802.1q vid=30 name=Service
+ip lan1/3 address 10.0.30.1/24
+ip lan2 address dhcp
+ip lan2 inbound filter list 201 202 203 204 205 206 207 299
+ip lan2 nat descriptor 200
+
+#
+# WAN configuration
+#
+
+
+#
+# ISDN configuration
+#
+
+
+#
+# Provider Type configuration
+#
+
+provider lan1 name LAN:
+provider lan2 name PRV/0/1/5/0/0/0:
+provider ntpdate ntp.nict.jp
+
+#
+# PP configuration
+#
+
+pp disable all
+
+#
+# TUNNEL configuration
+#
+
+no tunnel enable all
+
+#
+# LOOPBACK/NULL configuration
+#
+
+
+#
+# IP filter configuration
+#
+
+ip filter 500000 restrict * * * * *
+
+#
+# IP dynamic filter configuration
+#
+
+
+#
+# IP Policy Filter configuration
+#
+
+ip inbound filter 201 reject-nolog * * tcp,udp * 135
+ip inbound filter 202 reject-nolog * * tcp,udp 135 *
+ip inbound filter 203 reject-nolog * * tcp,udp * netbios_ns-netbios_ssn
+ip inbound filter 204 reject-nolog * * tcp,udp netbios_ns-netbios_ssn *
+ip inbound filter 205 reject-nolog * * tcp,udp * 445
+ip inbound filter 206 reject-nolog * * tcp,udp 445 *
+ip inbound filter 207 reject-nolog 192.168.xxx.0/24 * * * *
+ip inbound filter 299 pass-nolog * * * * *
+ip policy interface group 101 name=Private local lan1 lan1/1 lan1/2 lan1/3
+ip policy address group 101 name=Private 192.168.xxx.0/24 10.0.10.0/24 10.0.20.0/24 10.0.30.0/24
+ip policy address group 102 name=Any *
+ip policy service group 101 name="Open Services"
+ip policy service group 102 name=General dns ntp
+ip policy service group 103 name=Mail pop3 smtp submission
+
+#
+# IP forward filter configuration
+#
+
+
+#
+# NAT Descriptor configuration
+#
+
+nat descriptor type 200 masquerade
+nat descriptor address outer 200 primary
+
+#
+# RIP configuration
+#
+
+
+#
+# OSPF configuration
+#
+
+
+#
+# BGP configuration
+#
+
+
+#
+# IPSEC configuration
+#
+
+
+#
+# IP flow timer configuration
+#
+
+
+#
+# PKI configuration
+#
+
+
+#
+# IPv6 filter configuration
+#
+
+
+#
+# IPv6 dynamic filter configuration
+#
+
+
+#
+# IPv6 Policy Filter configuration
+#
+
+
+#
+# RIP6 configuration
+#
+
+
+#
+# DHCP6 configuration
+#
+
+
+#
+# Cooperation configuration
+#
+
+
+#
+# Queueing configuration
+#
+
+
+#
+# URL filter configuration
+#
+
+
+#
+# RADIUS configuration
+#
+
+
+#
+# SYSLOG configuration
+#
+
+
+#
+# TFTP configuration
+#
+
+
+#
+# TELNETD configuration
+#
+
+telnetd host none
+
+#
+# DHCP configuration
+#
+
+dhcp service server
+dhcp server rfc2131 compliant except remain-silent
+dhcp scope 1 192.168.xxx.2-192.168.xxx.191/24
+dhcp scope 10 10.0.10.2-10.0.10.210/24
+dhcp scope 20 10.0.20.2-10.0.20.199/24
+dhcp scope 30 10.0.30.2-10.0.30.199/24
+dhcp scope bind 10 10.0.10.200 ethernet <MAC Address>
+dhcp scope bind 10 10.0.10.202 ethernet <MAC Address>
+dhcp scope bind 10 10.0.10.203 ethernet <MAC Address>
+
+#
+# DHCPC configuration
+#
+
+
+#
+# DNS configuration
+#
+
+dns server dhcp lan2
+dns private address spoof on
+
+#
+# WINS configuration
+#
+
+
+#
+# SNMP configuration
+#
+
+
+#
+# Schedule configuration
+#
+
+schedule at 1 */* 01:39 * ntpdate ntp.nict.jp
+
+#
+# PPPoE configuration
+#
+
+
+#
+# TCP configuration
+#
+
+
+#
+# PPTP configuration
+#
+
+
+#
+# L2TP configuration
+#
+
+
+#
+# HTTPD configuration
+#
+
+httpd host lan1
+
+#
+# Netvolante DNS configuration
+#
+
+
+#
+# UPnP configuration
+#
+
+
+#
+# Alarm configuration
+#
+
+
+#
+# SIP configuration
+#
+
+
+#
+# HTTP Revision Up configuration
+#
+
+
+#
+# Operation configuration
+#
+
+
+#
+# License Server configuration
+#
+
+
+#
+# Mail Security configuration
+#
+
+
+#
+# YSC configuration
+#
+
+
+#
+# YNO Agent configuration
+#
+
+
+#
+# SSHD configuration
+#
+
+
+#
+# SFTPD configuration
+#
+
+
+#
+# SSH configuration
+#
+
+
+#
+# External-memory configuration
+#
+
+
+#
+# USB host configuration
+#
+
+
+#
+# SD configuration
+#
+
+
+#
+# AUTH-USER configuration
+#
+
+
+#
+# Statistics configuration
+#
+
+statistics cpu on
+statistics memory on
+statistics traffic on
+statistics flow on
+statistics route on
+statistics nat on
+statistics filter on
+statistics qos on
+
+#
+# Heartbeat configuration
+#
+
+
+#
+# Diagnosis configuration
+#
+
+
+#
+# NTP configuration
+#
+
+
+#
+# SNTPD configuration
+#
+
+
+#
+# Mobile Internet Access configuration
+#
+
+
+### USB1 ###
+
+
+#
+# Lua Script configuration
+#
+
+
+#
+# NGN configuration
+#
+
+
+#
+# Switch Control configuration
+#
+
+
+#
+# AP Control configuration
+#
+
+
+# If you want to save configuration to Nonvolatile memory,
+#  remove `#' of next line.
+
+#save

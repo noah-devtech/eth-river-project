@@ -18,6 +18,7 @@ read_file = "test-data/pcap/test.pcapng"
 NETWORK_INTERFACE = os.getenv("NETWORK_INTERFACE", "Wi-Fi")
 TARGET_IP = os.getenv("TARGET_IP", "127.0.0.1")
 TARGET_PORT = int(os.getenv("TARGET_PORT", "12345"))
+counter = 0
 
 OSC_CLIENT = udp_client.SimpleUDPClient(TARGET_IP, TARGET_PORT)
 print(f"[*] OSC sending to {TARGET_IP}:{TARGET_PORT}")
@@ -55,6 +56,8 @@ def main() -> None:
                     "osc_client": OSC_CLIENT,
                 }
                 link_layer.process(packet, packet.layers.copy(), context)
+                global counter
+                counter += 1
         else:
             for packet in capture_session.sniff_continuously():
                 time_epoch = float(get_nested_attr(packet, "frame_info.time_epoch"))
@@ -66,13 +69,18 @@ def main() -> None:
                     "osc_client": OSC_CLIENT,
                 }
                 link_layer.process(packet, packet.layers.copy(), context)
+                counter += 1
 
     except KeyboardInterrupt:
         print("\n[*] Capture stopped by user.")
+        print(counter)
         sys.exit(0)
     except Exception as e:
         print(f"[!] An error occurred: {e}")
-        sys.exit(1)
+        # sys.exit(1)
+
+    print(counter)
+
 
 
 if __name__ == "__main__":
