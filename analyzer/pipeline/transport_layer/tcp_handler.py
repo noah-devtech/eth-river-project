@@ -25,7 +25,6 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
 
     context["source_port"] = get_nested_attr(tcp_layer, "srcport")
     context["dest_port"] = get_nested_attr(tcp_layer, "dstport")
-    protocol = None
 
     flags = get_nested_attr(tcp_layer, "flags_tree")
     if flags:
@@ -41,10 +40,6 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
         if fin:
             format_output(context, "TCP-FIN")
             return
-
-    if protocol is not None:
-        format_output(context, protocol)
-        return
 
     if layers:
         app_layer_name = get_nested_attr(layers[0], "layer_name")
