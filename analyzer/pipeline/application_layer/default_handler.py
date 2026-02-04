@@ -11,5 +11,6 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     if not len(layers) == 0 and has_nested_attr(layers[0], "layer_name"):
         protocol = get_nested_attr(layers[0], "layer_name")
         format_output(context, protocol)
+        return
     protocol = "Other"
     format_output(context, protocol)
