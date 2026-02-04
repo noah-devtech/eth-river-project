@@ -39,6 +39,7 @@ public class RingBuffer {
 
     public void clear() {
         head = 0;
+        count = 0;
     }
 
 }
