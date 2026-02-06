@@ -35,7 +35,8 @@ public class Main extends PApplet {
     float MAX_P_SIZE = 30;
     int counter = 0;
     SimpleQuadTree quadTree;
-    PGraphics fadeLayer;
+    PGraphics particleLayer;
+    PGraphics nodeLayer;
     boolean isDebug;
     private String[] TARGET_PREFIXES;
 
@@ -62,7 +63,8 @@ public class Main extends PApplet {
         newParticleQueue = new ConcurrentLinkedQueue<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
-        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        nodeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        particleLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
         pixelDensity(displayDensity());
         windowResizable(true);
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
@@ -81,15 +83,20 @@ public class Main extends PApplet {
                 spawnDebugParticle();
             }
         }
-        fadeLayer.beginDraw();
-        fadeLayer.scale(pixelDensity);
-        fadeLayer.blendMode(SUBTRACT);
+        particleLayer.beginDraw();
+        particleLayer.scale(pixelDensity);
+        particleLayer.blendMode(SUBTRACT);
 
-        fadeLayer.noStroke();
-        fadeLayer.fill(10);
-        fadeLayer.rect(0, 0, width, height);
+        particleLayer.noStroke();
+        particleLayer.fill(3, 255);
+        particleLayer.rect(0, 0, width, height);
+        particleLayer.blendMode(BLEND);
 
-        fadeLayer.blendMode(ADD);
+        particleLayer.noStroke();
+        particleLayer.fill(0, 10);
+        particleLayer.rect(0, 0, width, height);
+
+        particleLayer.blendMode(ADD);
         SimpleQuadTree.resetPool();
         quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 10, 5);
         for (Particle p : particles) {
@@ -104,11 +111,10 @@ public class Main extends PApplet {
             p.calcForces(queryBuffer);
         });
 
-
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
             p.updatePhysics();
-            p.draw(fadeLayer);
+            p.draw(particleLayer);
             p.makeNodeAlive();
             if (p.isDead()) {
                 particles.remove(i);
@@ -116,10 +122,16 @@ public class Main extends PApplet {
 
             }
         }
-        fadeLayer.endDraw();
+        particleLayer.endDraw();
         background(0);
         blendMode(BLEND);
-        image(fadeLayer, 0, 0, width, height);
+        image(particleLayer, 0, 0, width, height);
+
+        nodeLayer.beginDraw();
+        nodeLayer.scale(pixelDensity);
+        nodeLayer.clear();
+
+        nodeLayer.blendMode(ADD);
 
         for (Node node : nodes.values()) {
             node.separate(nodes);
@@ -143,6 +155,9 @@ public class Main extends PApplet {
         text("Packet NO: " + lastNumber, 20, 150);
         text("Particle Count: " + particles.size(), 20, 170);
         text("Particle Total Count: " + counter, 20, 190);
+
+        nodeLayer.endDraw();
+        image(nodeLayer, 0, 0, width, height);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -234,7 +249,8 @@ public class Main extends PApplet {
 
     @Override
     public void windowResized() {
-        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        particleLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        nodeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
     }
 
     @Override
