@@ -172,7 +172,7 @@ public class Main extends PApplet {
             Node srcNode = getOrCreateNode(lastSrcIp);
             Node dstNode = getOrCreateNode(lastDstIp);
             float sqrtLength = sqrt(lastLength);
-            float particleSize = map(sqrtLength, sqrt(1), sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
+            float particleSize = map(sqrtLength, 1, sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
             particleSize = max(MIN_P_SIZE, particleSize);
             float particleSpeed = 5;
 

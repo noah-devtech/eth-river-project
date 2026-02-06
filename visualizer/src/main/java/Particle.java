@@ -37,6 +37,12 @@ public class Particle {
         this.acc = new PVector(0, 0);
     }
 
+    private boolean isNear(PVector target, float r) {
+        float dx = target.x - pos.x;
+        float dy = target.y - pos.y;
+        return (dx * dx + dy * dy) < (r * r);
+    }
+
     void updatePhysics() {
         //オイラー積分
         vel.add(acc);
@@ -50,11 +56,11 @@ public class Particle {
 
     private PVector applyDumping() {
         steering.set(0, 0);
-        float dist = PVector.dist(targetNode.pos, pos);
         float dampingRadius = 30.0f; // 抵抗が発生し始める距離
-        if (dist < dampingRadius) {
+        if (isNear(targetNode.pos, dampingRadius)) {
             // 近づくほど「摩擦」を強くする（0.0 = 摩擦なし、1.0 = 強い摩擦）
             // map(現在距離, 0, 150, 最大摩擦, 摩擦なし)
+            float dist = PVector.dist(targetNode.pos, pos);
             float damping = PApplet.map(dist, 0, dampingRadius, 0.3f, 0.0f);
 
             steering.set(vel);
@@ -91,10 +97,9 @@ public class Particle {
     }
 
     boolean isDead() {
-        float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < (this.size);
+        return isNear(targetNode.pos, size);
     }
 
     PVector applySeeking(PVector target) {
@@ -144,22 +149,21 @@ public class Particle {
 
         for (Particle other : neighbors) {
             if (other == this) continue;
-            float d = PVector.dist(pos, other.pos);
-            if (d <= 0) continue;
-            if (d < sepRadius) {
+            if (isNear(other.pos, sepRadius)) {
                 diff.set(pos);
                 diff.sub(other.pos);
                 diff.normalize();
-                diff.div(d);
+                float d = PVector.dist(pos, other.pos);
+                if (0 < d) diff.div(d);
                 sepSum.add(diff);
                 countSep++;
             }
             if (other.targetNode == this.targetNode) {
-                if (d < cohRadius) {
+                if (isNear(other.pos, cohRadius)) {
                     cohSum.add(other.pos);
                     countCoh++;
                 }
-                if (d < aliRadius) {
+                if (isNear(other.pos, aliRadius)) {
                     aliSum.add(other.vel);
                     countAli++;
                 }
