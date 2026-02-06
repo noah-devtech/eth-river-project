@@ -76,7 +76,7 @@ public class Main extends PApplet {
             particles.add(newParticleQueue.poll());
         }
         if (keyPressed && key == 'f') {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 100; i++) {
                 spawnDebugParticle();
             }
         }
@@ -94,18 +94,24 @@ public class Main extends PApplet {
         for (Particle p : particles) {
             quadTree.insert(p);
         }
-        synchronized (lock) {
-            float r = 50.0f;
-            for (int i = particles.size() - 1; i >= 0; i--) {
-                Particle p = particles.get(i);
-                queryBuffer.clear();
-                quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
-                p.update(queryBuffer);
-                p.draw(fadeLayer);
-                p.makeNodeAlive();
-                if (p.isDead()) {
-                    particles.remove(i);
-                }
+        float r = 50.0f;
+
+        particles.parallelStream().forEach(p -> {
+            List<Particle> queryBuffer = new ArrayList<>();
+            quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
+            p.calcForces(queryBuffer);
+        });
+
+
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            p.updatePhysics();
+            p.draw(fadeLayer);
+            p.makeNodeAlive();
+            if (p.isDead()) {
+                particles.remove(i);
+
+
             }
         }
         fadeLayer.endDraw();
@@ -167,13 +173,13 @@ public class Main extends PApplet {
             Node srcNode = getOrCreateNode(lastSrcIp);
             Node dstNode = getOrCreateNode(lastDstIp);
             float sqrtLength = sqrt(lastLength);
-            float particleSize = map(sqrtLength, sqrt(1), sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
+            float particleSize = map(sqrtLength, 1, sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
             particleSize = max(MIN_P_SIZE, particleSize);
             float particleSpeed = 5;
 
+
+            newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
             synchronized (lock) {
-                // 変更点: 第一引数に this を渡す
-                newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
                 counter++;
             }
 
@@ -220,7 +226,6 @@ public class Main extends PApplet {
         }
 
         PVector pos = new PVector(x, y);
-        // 変更点: 第一引数に this を渡す
         Node newNode = new Node(this, ip, pos, isLocal);
         nodes.put(ip, newNode);
         return newNode;
