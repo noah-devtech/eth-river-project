@@ -60,7 +60,8 @@ application {
             "--add-exports=java.desktop/sun.awt=ALL-UNNAMED",
             "--add-opens=java.desktop/sun.awt=ALL-UNNAMED",
             "--add-exports=java.desktop/sun.java2d=ALL-UNNAMED",
-            "--add-opens=java.desktop/sun.java2d=ALL-UNNAMED"
+            "--add-opens=java.desktop/sun.java2d=ALL-UNNAMED",
+            "-XX:+UseZGC"
         )
 }
 
