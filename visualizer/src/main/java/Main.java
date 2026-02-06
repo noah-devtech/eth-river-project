@@ -18,6 +18,7 @@ public class Main extends PApplet {
 
     private final Object lock = new Object();
     private final List<Particle> queryBuffer = new ArrayList<>(500);
+    private final ThreadLocal<List<Particle>> threadLocalBuffer = ThreadLocal.withInitial(() -> new ArrayList<>(500));
     OscP5 oscP5;
     int listenPort;
     ArrayList<Particle> particles;
@@ -97,7 +98,8 @@ public class Main extends PApplet {
         float r = 50.0f;
 
         particles.parallelStream().forEach(p -> {
-            List<Particle> queryBuffer = new ArrayList<>();
+            List<Particle> queryBuffer = threadLocalBuffer.get();
+            queryBuffer.clear();
             quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
             p.calcForces(queryBuffer);
         });
