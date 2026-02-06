@@ -22,7 +22,7 @@ public class Particle {
     float size;
     float slowingRadius = 200; // この距離に入ると減速を開始
     Node srcNode;
-    RingBuffer history = new RingBuffer(5);
+    PVector prevPos;
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
@@ -35,6 +35,7 @@ public class Particle {
         this.size = startSize;
         this.vel = new PVector(0, 0);
         this.acc = new PVector(0, 0);
+        this.prevPos = pos.copy();
     }
 
     private boolean isNear(PVector target, float r) {
@@ -44,6 +45,7 @@ public class Particle {
     }
 
     void updatePhysics() {
+        prevPos.set(pos);
         //オイラー積分
         vel.add(acc);
         vel.limit(maxSpeed);
@@ -51,7 +53,6 @@ public class Particle {
 
         //加速度をリセット
         acc.mult(0);
-        history.add(pos);
     }
 
     private PVector applyDumping() {
@@ -84,16 +85,7 @@ public class Particle {
         pg.stroke(c);
         pg.strokeWeight(1.0f);
 
-        pg.beginShape();
-        for (int i = 0; i < history.size(); i++) {
-            PVector pos = history.get(i);
-            if (pos != null) {
-                pg.vertex(pos.x, pos.y);
-            }
-        }
-
-        pg.vertex(pos.x, pos.y);
-        pg.endShape();
+        pg.line(prevPos.x, prevPos.y, pos.x, pos.y);
     }
 
     boolean isDead() {
