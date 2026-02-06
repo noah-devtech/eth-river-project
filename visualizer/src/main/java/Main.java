@@ -94,13 +94,18 @@ public class Main extends PApplet {
         for (Particle p : particles) {
             quadTree.insert(p);
         }
-
         float r = 50.0f;
+
+        particles.parallelStream().forEach(p -> {
+            List<Particle> queryBuffer = new ArrayList<>();
+            quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
+            p.calcForces(queryBuffer);
+        });
+
+
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
-            queryBuffer.clear();
-            quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
-            p.update(queryBuffer);
+            p.updatePhysics();
             p.draw(fadeLayer);
             p.makeNodeAlive();
             if (p.isDead()) {

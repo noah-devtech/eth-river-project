@@ -37,22 +37,7 @@ public class Particle {
         this.acc = new PVector(0, 0);
     }
 
-    void update(List<Particle> neighbors) {
-        history.add(pos);
-        applyForce(seek(targetNode.pos));
-        applyForce(applyFlocking(neighbors).mult(0.5f));
-
-
-        float dist = PVector.dist(targetNode.pos, pos);
-        float dampingRadius = 200.0f; // 抵抗が発生し始める距離
-
-        if (dist < dampingRadius) {
-            // 近づくほど「摩擦」を強くする（1.0 = 摩擦なし、0.9 = 強い摩擦）
-            // map(現在距離, 0, 150, 最大摩擦, 摩擦なし)
-            float damping = PApplet.map(dist, 0, dampingRadius, 0.85f, 1.0f);
-
-            vel.mult(damping);
-        }
+    void updatePhysics() {
         //オイラー積分
         vel.add(acc);
         vel.limit(maxSpeed);
@@ -60,6 +45,32 @@ public class Particle {
 
         //加速度をリセット
         acc.mult(0);
+        history.add(pos);
+    }
+
+    private PVector applyDumping() {
+        steering.set(0, 0);
+        float dist = PVector.dist(targetNode.pos, pos);
+        float dampingRadius = 30.0f; // 抵抗が発生し始める距離
+        if (dist < dampingRadius) {
+            // 近づくほど「摩擦」を強くする（0.0 = 摩擦なし、1.0 = 強い摩擦）
+            // map(現在距離, 0, 150, 最大摩擦, 摩擦なし)
+            float damping = PApplet.map(dist, 0, dampingRadius, 0.3f, 0.0f);
+
+            steering.set(vel);
+            steering.mult(-1);
+            steering.normalize();
+            steering.mult(vel.mag() * damping);
+        }
+        return steering;
+    }
+
+    public void calcForces(List<Particle> neighbors) {
+        applyForce(applySeeking(targetNode.pos));
+        applyForce(applyFlocking(neighbors).mult(0.5f));
+        applyForce(applyDumping());
+
+
     }
 
     void draw(PGraphics pg) {
@@ -86,7 +97,7 @@ public class Particle {
         return d < (this.size);
     }
 
-    PVector seek(PVector target) {
+    PVector applySeeking(PVector target) {
         desired.set(target);
         desired.sub(pos);
 
@@ -162,7 +173,7 @@ public class Particle {
         }
         if (countCoh > 0) {
             cohSum.div(countCoh);
-            steering.add(seek(cohSum).mult(0.8f));
+            steering.add(applySeeking(cohSum).mult(0.8f));
         }
         if (countAli > 0) {
             aliSum.div(countAli);
