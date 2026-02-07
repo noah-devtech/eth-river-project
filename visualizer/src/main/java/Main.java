@@ -281,6 +281,6 @@ public class Main extends PApplet {
         List<Node> nodeList = new ArrayList<>(nodes.values());
         Node src = nodeList.get((int) random(nodeList.size()));
         Node dst = nodeList.get((int) random(nodeList.size()));
-        particles.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
+        newParticleQueue.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
     }
 }
