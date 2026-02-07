@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Main extends PApplet {
 
     private final Object lock = new Object();
-    private final List<Particle> queryBuffer = new ArrayList<>(500);
+    private final ThreadLocal<List<Particle>> threadLocalBuffer = ThreadLocal.withInitial(() -> new ArrayList<>(500));
     OscP5 oscP5;
     int listenPort;
     ArrayList<Particle> particles;
@@ -33,7 +33,8 @@ public class Main extends PApplet {
     float MAX_P_SIZE = 30;
     int counter = 0;
     SimpleQuadTree quadTree;
-    PGraphics fadeLayer;
+    PGraphics particleLayer;
+    PGraphics nodeLayer;
     boolean isDebug;
     DebugWindow debugWindow = new DebugWindow(this);
     private String[] TARGET_PREFIXES;
@@ -50,6 +51,7 @@ public class Main extends PApplet {
     @Override
     public void setup() {
         PApplet.runSketch(new String[]{"DebugWindow"}, debugWindow);
+        Particle.preAllocate(this, 20000);
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
 
@@ -63,11 +65,12 @@ public class Main extends PApplet {
             debugWindow.hide();
         }
         background(0);
-        particles = new ArrayList<>(5000);
+        particles = new ArrayList<>(20000);
         newParticleQueue = new ConcurrentLinkedQueue<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
-        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        nodeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        particleLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
         pixelDensity(displayDensity());
         windowResizable(true);
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
@@ -86,44 +89,72 @@ public class Main extends PApplet {
                 spawnDebugParticle();
             }
         }
-        fadeLayer.beginDraw();
-        fadeLayer.scale(pixelDensity);
-        fadeLayer.blendMode(SUBTRACT);
+        particleLayer.beginDraw();
+        particleLayer.scale(pixelDensity);
+        particleLayer.blendMode(SUBTRACT);
 
-        fadeLayer.noStroke();
-        fadeLayer.fill(10);
-        fadeLayer.rect(0, 0, width, height);
+        particleLayer.noStroke();
+        particleLayer.fill(3, 255);
+        particleLayer.rect(0, 0, width, height);
+        particleLayer.blendMode(BLEND);
 
-        fadeLayer.blendMode(ADD);
+        particleLayer.noStroke();
+        particleLayer.fill(0, 10);
+        particleLayer.rect(0, 0, width, height);
+
+        particleLayer.blendMode(ADD);
         SimpleQuadTree.resetPool();
-        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 10, 5);
+        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 50, 5);
         for (Particle p : particles) {
             quadTree.insert(p);
         }
         float r = 50.0f;
 
         particles.parallelStream().forEach(p -> {
-            List<Particle> queryBuffer = new ArrayList<>();
+            List<Particle> queryBuffer = threadLocalBuffer.get();
+            queryBuffer.clear();
             quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
             p.calcForces(queryBuffer);
         });
 
 
+        particleLayer.beginShape(LINES);
+        particleLayer.noFill();
+        particleLayer.strokeWeight(1.0f);
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
             p.updatePhysics();
-            p.draw(fadeLayer);
+
+
+            particleLayer.stroke(p.c);
+
+            particleLayer.line(p.prevPos.x, p.prevPos.y, p.pos.x, p.pos.y);
+
+
             p.makeNodeAlive();
             if (p.isDead()) {
-                particles.remove(i);
-
-
+                int lastIndex = particles.size() - 1;
+                if (i != lastIndex) {
+                    Particle lastParticle = particles.remove(lastIndex);
+                    particles.set(i, lastParticle);
+                } else {
+                    particles.remove(lastIndex);
+                }
+                Particle.recycle(p);
+                i--;
             }
         }
-        fadeLayer.endDraw();
+        particleLayer.endShape();
+        particleLayer.endDraw();
         background(0);
         blendMode(BLEND);
-        image(fadeLayer, 0, 0, width, height);
+        image(particleLayer, 0, 0, width, height);
+
+        nodeLayer.beginDraw();
+        nodeLayer.scale(pixelDensity);
+        nodeLayer.clear();
+
+        nodeLayer.blendMode(ADD);
 
         for (Node node : nodes.values()) {
             node.separate(nodes);
@@ -135,6 +166,9 @@ public class Main extends PApplet {
                 nodes.remove(node.ip);
             }
         }
+
+        nodeLayer.endDraw();
+        image(nodeLayer, 0, 0, width, height);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -171,7 +205,7 @@ public class Main extends PApplet {
             float particleSpeed = 5;
 
 
-            newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
+            newParticleQueue.add(Particle.obtain(srcNode, dstNode, particleSpeed, particleColor, particleSize));
             synchronized (lock) {
                 counter++;
             }
@@ -224,7 +258,8 @@ public class Main extends PApplet {
 
     @Override
     public void windowResized() {
-        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        particleLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        nodeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
     }
 
     @Override
@@ -243,9 +278,9 @@ public class Main extends PApplet {
     void spawnDebugParticle() {
         if (nodes.isEmpty()) return;
         List<Node> nodeList = new ArrayList<>(nodes.values());
-        Node src = nodeList.get((int) random(nodeList.size()));
-        Node dst = nodeList.get((int) random(nodeList.size()));
-        particles.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
+        Node srcNode = nodeList.get((int) random(nodeList.size()));
+        Node dstNode = nodeList.get((int) random(nodeList.size()));
+        newParticleQueue.add(Particle.obtain(srcNode, dstNode, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
     }
 
     public void onToggleDebug() {
