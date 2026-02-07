@@ -35,6 +35,7 @@ public class Main extends PApplet {
     SimpleQuadTree quadTree;
     PGraphics fadeLayer;
     boolean isDebug;
+    DebugWindow debugWindow = new DebugWindow(this);
     private String[] TARGET_PREFIXES;
 
     public static void main(String[] args) {
@@ -48,13 +49,19 @@ public class Main extends PApplet {
 
     @Override
     public void setup() {
+        PApplet.runSketch(new String[]{"DebugWindow"}, debugWindow);
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
 
         listenPort = Integer.parseInt(dotenv.get("LISTENING_PORT", "12345"));
         String prefixes = dotenv.get("TARGET_PREFIXES", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16");
         TARGET_PREFIXES = prefixes.split(",");
-        isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
+        isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "false"));
+        if (isDebug) {
+            debugWindow.show();
+        } else {
+            debugWindow.hide();
+        }
         background(0);
         particles = new ArrayList<>(5000);
         newParticleQueue = new ConcurrentLinkedQueue<>();
@@ -128,19 +135,6 @@ public class Main extends PApplet {
                 nodes.remove(node.ip);
             }
         }
-
-        fill(255, 150);
-        textSize(14);
-        text("Listening on port: " + listenPort, 20, 30);
-        text("Last Address: " + lastAddress, 20, 50);
-        text("Protocol: " + lastProtocol, 20, 70);
-        text("Length: " + lastLength, 20, 90);
-        text("Source IP: " + lastSrcIp, 20, 110);
-        text("Dest IP: " + lastDstIp, 20, 130);
-        text("Packet NO: " + lastNumber, 20, 150);
-        text("Particle Count: " + particles.size(), 20, 170);
-        text("Particle Total Count: " + counter, 20, 190);
-        text("Frame Rate: " + String.format("%.2f", frameRate) + " fps", 20, 210);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -241,6 +235,9 @@ public class Main extends PApplet {
         if (key == 'c' || key == 'C') {
             counter = 0;
         }
+        if (key == 'd' || key == 'D') {
+            onToggleDebug();
+        }
     }
 
     void spawnDebugParticle() {
@@ -249,5 +246,14 @@ public class Main extends PApplet {
         Node src = nodeList.get((int) random(nodeList.size()));
         Node dst = nodeList.get((int) random(nodeList.size()));
         particles.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
+    }
+
+    public void onToggleDebug() {
+        isDebug = !isDebug;
+        if (isDebug) {
+            debugWindow.show();
+        } else {
+            debugWindow.hide();
+        }
     }
 }
