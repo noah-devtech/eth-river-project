@@ -111,17 +111,30 @@ public class Main extends PApplet {
             p.calcForces(queryBuffer);
         });
 
+
+        particleLayer.beginShape(LINES);
+        particleLayer.noFill();
+        particleLayer.strokeWeight(1.0f);
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
             p.updatePhysics();
-            p.draw(particleLayer);
+
+
+            particleLayer.stroke(p.c);
+
+            particleLayer.line(p.prevPos.x, p.prevPos.y, p.pos.x, p.pos.y);
+
+
             p.makeNodeAlive();
             if (p.isDead()) {
-                particles.remove(i);
-
-
+                int lastIndex = particles.size() - 1;
+                if (i != lastIndex) {
+                    particles.set(i, particles.get(lastIndex));
+                }
+                particles.remove(lastIndex);
             }
         }
+        particleLayer.endShape();
         particleLayer.endDraw();
         background(0);
         blendMode(BLEND);
