@@ -50,6 +50,7 @@ public class Main extends PApplet {
 
     @Override
     public void setup() {
+        Particle.preAllocate(this, 20000);
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
 
@@ -128,9 +129,13 @@ public class Main extends PApplet {
             if (p.isDead()) {
                 int lastIndex = particles.size() - 1;
                 if (i != lastIndex) {
-                    particles.set(i, particles.get(lastIndex));
+                    Particle lastParticle = particles.remove(lastIndex);
+                    particles.set(i, lastParticle);
+                } else {
+                    particles.remove(lastIndex);
                 }
-                particles.remove(lastIndex);
+                Particle.recycle(p);
+                i--;
             }
         }
         particleLayer.endShape();
@@ -206,7 +211,7 @@ public class Main extends PApplet {
             float particleSpeed = 5;
 
 
-            newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
+            newParticleQueue.add(Particle.obtain(srcNode, dstNode, particleSpeed, particleColor, particleSize));
             synchronized (lock) {
                 counter++;
             }
@@ -278,8 +283,8 @@ public class Main extends PApplet {
     void spawnDebugParticle() {
         if (nodes.isEmpty()) return;
         List<Node> nodeList = new ArrayList<>(nodes.values());
-        Node src = nodeList.get((int) random(nodeList.size()));
-        Node dst = nodeList.get((int) random(nodeList.size()));
-        newParticleQueue.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
+        Node srcNode = nodeList.get((int) random(nodeList.size()));
+        Node dstNode = nodeList.get((int) random(nodeList.size()));
+        newParticleQueue.add(Particle.obtain(srcNode, dstNode, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
     }
 }
