@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Main extends PApplet {
 
     private final Object lock = new Object();
-    private final List<Particle> queryBuffer = new ArrayList<>(500);
     private final ThreadLocal<List<Particle>> threadLocalBuffer = ThreadLocal.withInitial(() -> new ArrayList<>(500));
     OscP5 oscP5;
     int listenPort;
@@ -59,7 +58,7 @@ public class Main extends PApplet {
         TARGET_PREFIXES = prefixes.split(",");
         isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
         background(0);
-        particles = new ArrayList<>(5000);
+        particles = new ArrayList<>(20000);
         newParticleQueue = new ConcurrentLinkedQueue<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
@@ -98,7 +97,7 @@ public class Main extends PApplet {
 
         particleLayer.blendMode(ADD);
         SimpleQuadTree.resetPool();
-        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 10, 5);
+        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 50, 5);
         for (Particle p : particles) {
             quadTree.insert(p);
         }
