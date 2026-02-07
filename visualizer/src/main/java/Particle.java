@@ -1,5 +1,4 @@
 import processing.core.PApplet;
-import processing.core.PGraphics;
 import processing.core.PVector;
 
 import java.util.List;
@@ -78,14 +77,6 @@ public class Particle {
         applyForce(applyDumping());
 
 
-    }
-
-    void draw(PGraphics pg) {
-        pg.noFill();
-        pg.stroke(c);
-        pg.strokeWeight(1.0f);
-
-        pg.line(prevPos.x, prevPos.y, pos.x, pos.y);
     }
 
     boolean isDead() {
