@@ -6,7 +6,6 @@ import oscP5.OscP5;
 import processing.core.PApplet;
 import processing.core.PFont;
 import processing.core.PGraphics;
-import processing.core.PVector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -224,9 +223,7 @@ public class Main extends PApplet {
         } else {
             x = random(width * 0.1f, width * 0.2f);
         }
-
-        PVector pos = new PVector(x, y);
-        Node newNode = new Node(this, ip, pos, isLocal);
+        Node newNode = new Node(this, ip, x, y, isLocal);
         nodes.put(ip, newNode);
         return newNode;
     }
