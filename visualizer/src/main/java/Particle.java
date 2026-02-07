@@ -2,18 +2,22 @@ import processing.core.PApplet;
 import processing.core.PVector;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Particle {
+    private static final ConcurrentLinkedQueue<Particle> pool = new ConcurrentLinkedQueue<>();
+    private static final int MAX_POOL_SIZE = 25000;
+    static PApplet p; // メインのAppletへの参照
+    final PVector pos = new PVector();
+    final PVector vel = new PVector();
+    final PVector acc = new PVector();
+    final PVector prevPos = new PVector();
     private final PVector diff = new PVector(0, 0);
     private final PVector steering = new PVector(0, 0);
     private final PVector sepSum = new PVector(0, 0);
     private final PVector cohSum = new PVector(0, 0);
     private final PVector aliSum = new PVector(0, 0);
     private final PVector desired = new PVector(0, 0);
-    PApplet p; // メインのAppletへの参照
-    PVector pos;
-    PVector vel;
-    PVector acc;
     Node targetNode;
     float maxSpeed;
     float maxForce = 0.5f;
@@ -21,20 +25,51 @@ public class Particle {
     float size;
     float slowingRadius = 200; // この距離に入ると減速を開始
     Node srcNode;
-    PVector prevPos;
+
+    private Particle() {
+    }
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
-        this.p = p;
+        Particle.p = p;
+        reset(startNode, targetNode, maxSpeed, startColor, startSize);
+    }
+
+    public static void preAllocate(PApplet pApp, int count) {
+        p = pApp;
+        for (int i = 0; i < count; i++) {
+            pool.offer(new Particle());
+        }
+    }
+
+    public static Particle obtain(Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
+        Particle particle = pool.poll();
+        if (particle == null) {
+            particle = new Particle();
+        }
+        return particle.reset(startNode, targetNode, maxSpeed, startColor, startSize);
+    }
+
+    public static void recycle(Particle particle) {
+        if (pool.size() >= MAX_POOL_SIZE) return;
+        particle.targetNode = null;
+        particle.srcNode = null;
+        pool.offer(particle);
+    }
+
+    private Particle reset(Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
         this.srcNode = startNode;
-        this.pos = startNode.pos.copy();
         this.targetNode = targetNode;
         this.maxSpeed = maxSpeed;
         this.c = startColor;
         this.size = startSize;
-        this.vel = new PVector(0, 0);
-        this.acc = new PVector(0, 0);
-        this.prevPos = pos.copy();
+        this.vel.set(0, 0);
+        this.acc.set(0, 0);
+        this.pos.set(startNode.pos);
+        this.prevPos.set(startNode.pos);
+        this.steering.set(0, 0);
+        this.diff.set(0, 0);
+        return this;
     }
 
     private boolean isNear(PVector target, float r) {
