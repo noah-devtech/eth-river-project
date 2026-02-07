@@ -18,10 +18,10 @@ public class Node {
     int maxLife = 300;
 
     // コンストラクタの第一引数に PApplet を追加
-    public Node(PApplet p, String ip, PVector startPos, boolean isLocal) {
+    public Node(PApplet p, String ip, float x, float y, boolean isLocal) {
         this.p = p;
         this.ip = ip;
-        this.pos = startPos.copy();
+        this.pos = new PVector(x, y);
         this.vel = new PVector(0, 0);
         this.acc = new PVector(0, 0);
         this.isLocal = isLocal;
