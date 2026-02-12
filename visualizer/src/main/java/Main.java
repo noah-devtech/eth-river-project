@@ -38,6 +38,8 @@ public class Main extends PApplet {
     boolean isDebug;
     DebugWindow debugWindow = new DebugWindow(this);
     private String[] TARGET_PREFIXES;
+    public Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+    public boolean fullScreenMode = Boolean.parseBoolean(dotenv.get("FULL_SCREEN_MODE", "false"));
 
     public static void main(String[] args) {
         PApplet.main("Main");
@@ -45,14 +47,18 @@ public class Main extends PApplet {
 
     @Override
     public void settings() {
-        size(1200, 1000, P2D);
+        int mainDisplay = Integer.parseInt(dotenv.get("MAIN_DISPLAY", "2"));
+        if(fullScreenMode){
+            fullScreen(P2D,mainDisplay);
+        }else{
+            size(1920,1080,P2D);
+        }
     }
 
     @Override
     public void setup() {
         PApplet.runSketch(new String[]{"DebugWindow"}, debugWindow);
         Particle.preAllocate(this, 20000);
-        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
 
         listenPort = Integer.parseInt(dotenv.get("LISTENING_PORT", "12345"));
