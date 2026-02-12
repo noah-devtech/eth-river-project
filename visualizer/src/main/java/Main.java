@@ -81,7 +81,7 @@ public class Main extends PApplet {
         windowResizable(true);
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
-        PFont font = createFont("BIZ UDPゴシック", 14);
+        PFont font = createFont(dotenv.get("FONT_NAME", "BIZ UDPゴシック"), 14);
         textFont(font);
     }
 
