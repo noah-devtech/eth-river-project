@@ -52,8 +52,10 @@ vlan lan1/1 802.1q vid=10 name=Trust
 ip lan1/1 address 10.0.10.1/24
 vlan lan1/2 802.1q vid=20 name=Guest
 ip lan1/2 address 10.0.20.1/24
-vlan lan1/3 802.1q vid=30 name=Service
-ip lan1/3 address 10.0.30.1/24
+vlan lan1/5 802.1q vid=50 name=<STUDENT_NAME>
+ip lan1/5 address 10.0.50.1/24
+vlan lan1/6 802.1q vid=60 name=<STUDENT_NAME>
+ip lan1/6 address 10.0.60.1/24
 ip lan2 address dhcp
 ip lan2 inbound filter list 201 202 203 204 205 206 207 299
 ip lan2 nat descriptor 200
@@ -116,8 +118,8 @@ ip inbound filter 205 reject-nolog * * tcp,udp * 445
 ip inbound filter 206 reject-nolog * * tcp,udp 445 *
 ip inbound filter 207 reject-nolog 192.168.xxx.0/24 * * * *
 ip inbound filter 299 pass-nolog * * * * *
-ip policy interface group 101 name=Private local lan1 lan1/1 lan1/2 lan1/3
-ip policy address group 101 name=Private 192.168.xxx.0/24 10.0.10.0/24 10.0.20.0/24 10.0.30.0/24
+ip policy interface group 101 name=Private local lan1 lan1/1 lan1/2 lan1/5 lan1/6
+ip policy address group 101 name=Private 192.168.xxx.0/24
 ip policy address group 102 name=Any *
 ip policy service group 101 name="Open Services"
 ip policy service group 102 name=General dns ntp
@@ -235,7 +237,8 @@ dhcp server rfc2131 compliant except remain-silent
 dhcp scope 1 192.168.xxx.2-192.168.xxx.191/24
 dhcp scope 10 10.0.10.2-10.0.10.210/24
 dhcp scope 20 10.0.20.2-10.0.20.199/24
-dhcp scope 30 10.0.30.2-10.0.30.199/24
+dhcp scope 50 10.0.50.2-10.0.50.199/24
+dhcp scope 60 10.0.60.2-10.0.60.199/24
 dhcp scope bind 10 10.0.10.200 ethernet <MAC Address>
 dhcp scope bind 10 10.0.10.202 ethernet <MAC Address>
 dhcp scope bind 10 10.0.10.203 ethernet <MAC Address>
