@@ -10,8 +10,10 @@ username_adv "<ENCRYPTED_PASSWORD_REMOVED>"
 !
 ip address 192.168.xxx.254 255.255.255.0
 !
-sntp date 2014/1/1
-sntp time 20:40:5
+sntp status enable
+sntp date 2026/2/12
+sntp time 19:18:39
+sntp add server 61.205.120.130
 !
 spanning-tree mst version mstp
 spanning-tree mst name <DEVICE_MAC_ADDR_DASH>
@@ -35,11 +37,13 @@ system learn-limit disable
 interface vlan1
 member 4-5,8
 untagged 4-5,8
+dhcp relay-to 192.168.xxx.1
+dhcp-relay state unicast
 ip address 192.168.xxx.254 255.255.255.0
 !
 interface vlan10
 member 1-3,5-6,8
-untagged 1-3,5-6
+untagged 1-3,6
 name Trust
 management
 ip address 10.0.10.254 255.255.255.0
@@ -55,12 +59,12 @@ ip address 10.0.20.254 255.255.255.0
 dhcp relay-to 10.0.20.1
 dhcp-relay state unicast
 !
-interface vlan30
+interface vlan50
 member 1-3,8
-name Service
+name Emiru
 management
-ip address 10.0.30.254 255.255.255.0
-dhcp relay-to 10.0.30.1
+ip address 10.0.50.254 255.255.255.0
+dhcp relay-to 10.0.50.1
 dhcp-relay state unicast
 exit
 !
