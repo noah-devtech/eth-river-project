@@ -189,17 +189,24 @@ public class Main extends PApplet {
 
             int particleColor;
             particleColor = switch (lastProtocol) {
-                case "tcp" -> color(255, 128, 0);
-                case "dns" -> color(0, 255, 0);
-                case "tls-hello" -> color(255, 255, 0);
-                case "tls" -> color(0, 0, 200);
-                case "http" -> color(0, 150, 255);
-                case "wg" -> color(64, 0, 128);
-                case "quic" -> color(255, 0, 255);
-                case "data" -> color(255, 0, 0);
+                case "tcp-ack" -> color(255, 255, 0);
+                case "tcp-syn" -> color(255, 255, 255);
+                case "tcp-fin" -> color(150, 150, 150);
+
+                case "dns" -> color(0, 255, 255);
+                case "http" -> color(50, 205, 50);
+
+                case "https", "tls-hello", "tls" -> color(30, 144, 255);
+
+                case "quic" -> color(255, 20, 147);
+
+                case "tcp" -> color(186, 85, 211);
+                case "wg" -> color(136, 13, 16);
+                case "data" -> color(255, 140, 0);
+
                 default -> {
                     println("non-defined protocol:", lastProtocol);
-                    yield color(255, 255, 255);
+                    yield color(0, 51, 51);
                 }
             };
 
