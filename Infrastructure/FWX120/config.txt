@@ -118,12 +118,53 @@ ip inbound filter 205 reject-nolog * * tcp,udp * 445
 ip inbound filter 206 reject-nolog * * tcp,udp 445 *
 ip inbound filter 207 reject-nolog 192.168.xxx.0/24 * * * *
 ip inbound filter 299 pass-nolog * * * * *
-ip policy interface group 101 name=Private local lan1 lan1/1 lan1/2 lan1/5 lan1/6
-ip policy address group 101 name=Private 192.168.xxx.0/24
+ip policy interface group 1 name=Trust lan1 lan1/1
+ip policy interface group 2 name=Guest lan1/2
+ip policy interface group 3 name=Exhibitor lan1/5 lan1/6
+ip policy interface group 101 name=Private local lan1/1 lan1/2 lan1/5 lan1/6 lan1
+ip policy address group 1 name=Uplink 192.168.0.0/24
+ip policy address group 2 name=Exhibitor 10.0.50.0/24 10.0.60.0/24
+ip policy address group 3 name=Trust 192.168.xxx.0/24 10.0.10.0/24
+ip policy address group 4 name=Guest 10.0.20.0/24
+ip policy address group 101 name=Private 192.168.xxx.0/24 10.0.10.0/24 10.0.20.0/24 10.0.50.0/24 10.0.60.0/24
 ip policy address group 102 name=Any *
-ip policy service group 101 name="Open Services"
-ip policy service group 102 name=General dns ntp
-ip policy service group 103 name=Mail pop3 smtp submission
+ip policy service 1 Tailscale udp * 41641
+ip policy service group 1 name=DHCP dhcpc dhcps
+ip policy service group 2 name=Web http https udp/443 tcp/443 www
+ip policy service group 3 name=Management Tailscale ssh snmp syslog
+ip policy service group 4 name=Block ms-ds netbios_ns netbios_dgm netbios_ssn
+ip policy service group 102 name=General dns ntp icmp
+ip policy service group 103 name=Mail pop3 smtp submission imap imap3 tcp/995 tcp/993 tcp/465
+ip policy filter 1 reject-nolog * * * * *
+ip policy filter 2 reject-nolog 1 * * * *
+ip policy filter 3 pass-log * * 3 * 2
+ip policy filter 4 pass-nolog * local * * *
+ip policy filter 5 static-pass-nolog * 1 * * *
+ip policy filter 6 pass-nolog * lan2 * * *
+ip policy filter 7 reject-nolog * * * * 4
+ip policy filter 8 pass-nolog local * * * *
+ip policy filter 9 reject-nolog 2 * * * *
+ip policy filter 10 reject-nolog 3 * * * *
+ip policy filter 11 reject-nolog * local * * *
+ip policy filter 12 pass-nolog * lan2 * * 2
+ip policy filter 13 reject-nolog * * * 1 *
+ip policy filter 14 pass-nolog * * * * 3
+ip policy filter 15 pass-nolog * * * * 1
+ip policy filter 16 pass-nolog * * * * 102
+ip policy filter 17 reject-nolog * local * * *
+ip policy filter 18 pass-nolog * * * * 1
+ip policy filter 19 pass-nolog * * * * 102
+ip policy filter 20 pass-nolog * lan2 * * 2
+ip policy filter 21 static-pass-nolog lan1/5 lan1/5 * * *
+ip policy filter 22 static-pass-nolog lan1/6 lan1/6 * * *
+ip policy filter 23 pass-nolog * lan2 * * 103
+ip policy filter 24 reject-nolog * * * 1 *
+ip policy filter 25 pass-nolog * * 3 * *
+ip policy filter 26 pass-nolog * * * * 2
+ip policy filter 1000 static-pass-nolog * local * * 104
+ip policy filter 1001 static-pass-nolog * local * * 103
+ip policy filter set 1 name=eth-river 2 [4 [25 3] 5 6 14] 7 10 [21 [22] 20 [26 24] 23 17 [18 19]] 9 [12 [13] 11 [15 16]] 8 1
+ip policy filter set enable 1
 
 #
 # IP forward filter configuration
@@ -252,6 +293,7 @@ dhcp scope bind 10 10.0.10.203 ethernet <MAC Address>
 # DNS configuration
 #
 
+dns server 1.1.1.3 1.0.0.3
 dns server dhcp lan2
 dns private address spoof on
 
@@ -295,7 +337,7 @@ schedule at 1 */* 01:39 * ntpdate ntp.nict.jp
 # HTTPD configuration
 #
 
-httpd host lan1
+httpd host 10.0.10.0-10.0.10.255 192.168.xxx.0-192.168.xxx.255
 
 #
 # Netvolante DNS configuration
