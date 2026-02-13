@@ -38,9 +38,19 @@ public class DebugWindow extends PApplet {
     }
 
     public void show() {
-        GraphicsConfiguration config = MouseInfo.getPointerInfo().getDevice().getDefaultConfiguration();
-        Rectangle bounds = config.getBounds();
-        surface.setLocation(bounds.x + 50, bounds.y + 50);
+        if(main.fullScreenMode){
+            GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+            int targetDisplayEnv = Integer.parseInt(main.dotenv.get("DEBUG_DISPLAY", "1"));
+            int targetIndex = targetDisplayEnv - 1;
+            if (targetIndex >= 0 && targetIndex < devices.length) {
+                Rectangle bounds = devices[targetIndex].getDefaultConfiguration().getBounds();
+                surface.setLocation(bounds.x + 50, bounds.y + 50);
+            }
+        }else{
+            GraphicsConfiguration config = MouseInfo.getPointerInfo().getDevice().getDefaultConfiguration();
+            Rectangle bounds = config.getBounds();
+            surface.setLocation(bounds.x + 50, bounds.y + 50);
+        }
         isVisible = true;
         surface.setVisible(true);
         surface.setAlwaysOnTop(true);
