@@ -121,7 +121,7 @@ ip inbound filter 299 pass-nolog * * * * *
 ip policy interface group 1 name=Trust lan1 lan1/1
 ip policy interface group 2 name=Guest lan1/2
 ip policy interface group 3 name=Exhibitor lan1/5 lan1/6
-ip policy interface group 101 name=Private local lan1/1 lan1/2 lan1/5 lan1/6 lan1
+ip policy interface group 101 name=Private local lan1/1 lan1/2 lan1/5 lan1/6
 ip policy address group 1 name=Uplink 192.168.0.0/24
 ip policy address group 2 name=Exhibitor 10.0.50.0/24 10.0.60.0/24
 ip policy address group 3 name=Trust 192.168.xxx.0/24 10.0.10.0/24
@@ -163,7 +163,7 @@ ip policy filter 25 pass-nolog * * 3 * *
 ip policy filter 26 pass-nolog * * * * 2
 ip policy filter 1000 static-pass-nolog * local * * 104
 ip policy filter 1001 static-pass-nolog * local * * 103
-ip policy filter set 1 name=eth-river 2 [4 [25 3] 5 6 14] 7 10 [21 [22] 20 [26 24] 23 17 [18 19]] 9 [12 [13] 11 [15 16]] 8 1
+ip policy filter set 1 name=eth-river 2 [4 [25 3] 5 6 14] 7 10 [21 22 20 [24 26] 23 17 [18 19]] 9 [12 [13] 11 [15 16]] 8 1
 ip policy filter set enable 1
 
 #
@@ -283,6 +283,11 @@ dhcp scope 60 10.0.60.2-10.0.60.199/24
 dhcp scope bind 10 10.0.10.200 ethernet <MAC Address>
 dhcp scope bind 10 10.0.10.202 ethernet <MAC Address>
 dhcp scope bind 10 10.0.10.203 ethernet <MAC Address>
+dhcp scope option 1 dns=192.168.xxx.1
+dhcp scope option 10 dns=10.0.10.1
+dhcp scope option 20 dns=10.0.20.1
+dhcp scope option 50 dns=10.0.50.1
+dhcp scope option 60 dns=10.0.60.1
 
 #
 # DHCPC configuration
@@ -311,7 +316,7 @@ dns private address spoof on
 # Schedule configuration
 #
 
-schedule at 1 */* 01:39 * ntpdate ntp.nict.jp
+schedule at 1 */* 12:00 * ntpdate ntp.nict.jp
 
 #
 # PPPoE configuration
@@ -337,6 +342,7 @@ schedule at 1 */* 01:39 * ntpdate ntp.nict.jp
 # HTTPD configuration
 #
 
+httpd service on
 httpd host 10.0.10.0-10.0.10.255 192.168.xxx.0-192.168.xxx.255
 
 #
