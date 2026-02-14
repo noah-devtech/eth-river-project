@@ -2,13 +2,6 @@ import ipaddress
 import socket
 from typing import Any, Optional
 
-# netifacesがあれば、より正確なサブネットマスクを取得できる
-try:
-    import netifaces
-
-    has_netifaces = True
-except ImportError:
-    has_netifaces = False
 
 
 def get_lan_network() -> Optional[ipaddress.IPv4Network]:
@@ -25,21 +18,11 @@ def get_lan_network() -> Optional[ipaddress.IPv4Network]:
     finally:
         s.close()
 
-    netmask = None
-    if has_netifaces:
-        try:
-            import netifaces  # Ensure netifaces is imported in this scope
 
-            iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
-            netmask = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["netmask"]
-        except Exception:
-            pass
-
-    if not netmask:
-        netmask = "255.255.255.0"
-        print(
-            f"[Warning] Could not determine netmask automatically. Assuming {netmask}."
-        )
+    netmask = "255.255.255.0"
+    print(
+        f"[Warning] Could not determine netmask automatically. Assuming {netmask}."
+    )
 
     lan_network = ipaddress.ip_network(f"{local_ip}/{netmask}", strict=False)
     if isinstance(lan_network, ipaddress.IPv4Network):

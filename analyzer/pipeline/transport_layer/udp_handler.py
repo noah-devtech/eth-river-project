@@ -15,6 +15,7 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー4 (UDP) の処理。
     """
+    NOISE_PROTOCOLS={"mdns","ssdp","lmnr","dhcp","nbus","netbios_ns","igmp"}
     if not layers or layers[0].layer_name != "udp":
         print("This is not UDP packet")
         return
@@ -41,6 +42,10 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
         app_layer_name = get_nested_attr(layers[0], "layer_name")
         if app_layer_name in APPLICATION_HANDLERS:
             APPLICATION_HANDLERS[app_layer_name].process(packet, layers, context)
+            return
+
+        if app_layer_name in NOISE_PROTOCOLS:
+            format_output(context, "NOISE")
             return
 
     length_str = get_nested_attr(udp_layer, "length")

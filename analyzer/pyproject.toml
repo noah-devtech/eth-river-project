@@ -7,7 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "appdirs==1.4.4",
     "lxml==6.0.2",
-    "netifaces==0.11.0",
     "packaging==25.0",
     "pyshark==0.6",
     "python-dotenv>=1.2.1",
