@@ -31,7 +31,6 @@ public class Particle {
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
-        Particle.p = p;
         reset(startNode, targetNode, maxSpeed, startColor, startSize);
     }
 
