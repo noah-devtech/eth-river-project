@@ -147,7 +147,6 @@ public class Main extends PApplet {
                     particles.remove(lastIndex);
                 }
                 Particle.recycle(p);
-                i--;
             }
         }
         particleLayer.endShape();
