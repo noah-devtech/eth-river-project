@@ -86,6 +86,10 @@ cd visualizer
 ./gradlew run
 ```
 
+## Colors for Visualization
+
+![可視化用プロトコルカラーマップ / Protocol Color Mapping for Visualization](COLOR-MAP.png)
+
 ## Documentation Links
 
   * [ソフトウェア的なアーキテクチャーについて](docs/ARCHITECTURE.md)
