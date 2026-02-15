@@ -36,7 +36,7 @@
     </li>
     <li style="display: flex; align-items: center; margin-bottom: 15px;">
       <div style="width: 30px; height: 30px; background-color: rgb(136, 13, 16); border-radius: 4px; margin-right: 15px;"></div>
-      <span><strong>Wire Guard</strong></span>
+      <span><strong>WireGuard</strong></span>
     </li>
     <li style="display: flex; align-items: center;">
       <div style="width: 30px; height: 30px; background-color: rgb(0, 51, 51); border-radius: 4px; margin-right: 15px;"></div>
