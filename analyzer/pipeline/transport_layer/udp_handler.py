@@ -9,6 +9,7 @@ from ..application_layer import dns_handler
 APPLICATION_HANDLERS = {
     "dns": dns_handler,
 }
+NOISE_PROTOCOLS={"mdns","ssdp","lmnr","dhcp","nbus","netbios_ns","igmp"}
 
 
 def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
@@ -41,6 +42,10 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
         app_layer_name = get_nested_attr(layers[0], "layer_name")
         if app_layer_name in APPLICATION_HANDLERS:
             APPLICATION_HANDLERS[app_layer_name].process(packet, layers, context)
+            return
+
+        if app_layer_name in NOISE_PROTOCOLS:
+            format_output(context, "NOISE")
             return
 
     length_str = get_nested_attr(udp_layer, "length")

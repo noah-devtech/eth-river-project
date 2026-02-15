@@ -1,20 +1,23 @@
 import processing.core.PApplet;
-import processing.core.PGraphics;
 import processing.core.PVector;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Particle {
+    private static final ConcurrentLinkedQueue<Particle> pool = new ConcurrentLinkedQueue<>();
+    private static final int MAX_POOL_SIZE = 25000;
+    static PApplet p; // メインのAppletへの参照
+    final PVector pos = new PVector();
+    final PVector vel = new PVector();
+    final PVector acc = new PVector();
+    final PVector prevPos = new PVector();
     private final PVector diff = new PVector(0, 0);
     private final PVector steering = new PVector(0, 0);
     private final PVector sepSum = new PVector(0, 0);
     private final PVector cohSum = new PVector(0, 0);
     private final PVector aliSum = new PVector(0, 0);
     private final PVector desired = new PVector(0, 0);
-    PApplet p; // メインのAppletへの参照
-    PVector pos;
-    PVector vel;
-    PVector acc;
     Node targetNode;
     float maxSpeed;
     float maxForce = 0.5f;
@@ -22,37 +25,60 @@ public class Particle {
     float size;
     float slowingRadius = 200; // この距離に入ると減速を開始
     Node srcNode;
-    RingBuffer history = new RingBuffer(5);
+
+    private Particle() {
+    }
 
     // コンストラクタの第一引数に PApplet を追加
     public Particle(PApplet p, Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
-        this.p = p;
+        reset(startNode, targetNode, maxSpeed, startColor, startSize);
+    }
+
+    public static void preAllocate(PApplet pApp, int count) {
+        p = pApp;
+        for (int i = 0; i < count; i++) {
+            pool.offer(new Particle());
+        }
+    }
+
+    public static Particle obtain(Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
+        Particle particle = pool.poll();
+        if (particle == null) {
+            particle = new Particle();
+        }
+        return particle.reset(startNode, targetNode, maxSpeed, startColor, startSize);
+    }
+
+    public static void recycle(Particle particle) {
+        if (pool.size() >= MAX_POOL_SIZE) return;
+        particle.targetNode = null;
+        particle.srcNode = null;
+        pool.offer(particle);
+    }
+
+    private Particle reset(Node startNode, Node targetNode, float maxSpeed, int startColor, float startSize) {
         this.srcNode = startNode;
-        this.pos = startNode.pos.copy();
         this.targetNode = targetNode;
         this.maxSpeed = maxSpeed;
         this.c = startColor;
         this.size = startSize;
-        this.vel = new PVector(0, 0);
-        this.acc = new PVector(0, 0);
+        this.vel.set(0, 0);
+        this.acc.set(0, 0);
+        this.pos.set(startNode.pos);
+        this.prevPos.set(startNode.pos);
+        this.steering.set(0, 0);
+        this.diff.set(0, 0);
+        return this;
     }
 
-    void update(List<Particle> neighbors) {
-        history.add(pos);
-        applyForce(seek(targetNode.pos));
-        applyForce(applyFlocking(neighbors).mult(0.5f));
+    private boolean isNear(PVector target, float r) {
+        float dx = target.x - pos.x;
+        float dy = target.y - pos.y;
+        return (dx * dx + dy * dy) < (r * r);
+    }
 
-
-        float dist = PVector.dist(targetNode.pos, pos);
-        float dampingRadius = 200.0f; // 抵抗が発生し始める距離
-
-        if (dist < dampingRadius) {
-            // 近づくほど「摩擦」を強くする（1.0 = 摩擦なし、0.9 = 強い摩擦）
-            // map(現在距離, 0, 150, 最大摩擦, 摩擦なし)
-            float damping = PApplet.map(dist, 0, dampingRadius, 0.85f, 1.0f);
-
-            vel.mult(damping);
-        }
+    void updatePhysics() {
+        prevPos.set(pos);
         //オイラー積分
         vel.add(acc);
         vel.limit(maxSpeed);
@@ -62,31 +88,38 @@ public class Particle {
         acc.mult(0);
     }
 
-    void draw(PGraphics pg) {
-        pg.noFill();
-        pg.stroke(c);
-        pg.strokeWeight(1.0f);
+    private PVector applyDumping() {
+        steering.set(0, 0);
+        float dampingRadius = 30.0f; // 抵抗が発生し始める距離
+        if (isNear(targetNode.pos, dampingRadius)) {
+            // 近づくほど「摩擦」を強くする（0.0 = 摩擦なし、1.0 = 強い摩擦）
+            // map(現在距離, 0, 150, 最大摩擦, 摩擦なし)
+            float dist = PVector.dist(targetNode.pos, pos);
+            float damping = PApplet.map(dist, 0, dampingRadius, 0.3f, 0.0f);
 
-        pg.beginShape();
-        for (int i = 0; i < history.size(); i++) {
-            PVector pos = history.get(i);
-            if (pos != null) {
-                pg.vertex(pos.x, pos.y);
-            }
+            steering.set(vel);
+            steering.mult(-1);
+            steering.normalize();
+            steering.mult(vel.mag() * damping);
         }
+        return steering;
+    }
 
-        pg.vertex(pos.x, pos.y);
-        pg.endShape();
+    public void calcForces(List<Particle> neighbors) {
+        applyForce(applySeeking(targetNode.pos));
+        applyForce(applyFlocking(neighbors).mult(0.5f));
+        applyForce(applyDumping());
+
+
     }
 
     boolean isDead() {
-        float d = PVector.dist(pos, targetNode.pos);
         // p.width, p.height にアクセス
         if (pos.x < 0 || pos.x > p.width || pos.y < 0 || pos.y > p.height) return true;
-        return d < (this.size);
+        return isNear(targetNode.pos, size);
     }
 
-    PVector seek(PVector target) {
+    PVector applySeeking(PVector target) {
         desired.set(target);
         desired.sub(pos);
 
@@ -133,22 +166,21 @@ public class Particle {
 
         for (Particle other : neighbors) {
             if (other == this) continue;
-            float d = PVector.dist(pos, other.pos);
-            if (d <= 0) continue;
-            if (d < sepRadius) {
+            if (isNear(other.pos, sepRadius)) {
                 diff.set(pos);
                 diff.sub(other.pos);
                 diff.normalize();
-                diff.div(d);
+                float d = PVector.dist(pos, other.pos);
+                if (0 < d) diff.div(d);
                 sepSum.add(diff);
                 countSep++;
             }
             if (other.targetNode == this.targetNode) {
-                if (d < cohRadius) {
+                if (isNear(other.pos, cohRadius)) {
                     cohSum.add(other.pos);
                     countCoh++;
                 }
-                if (d < aliRadius) {
+                if (isNear(other.pos, aliRadius)) {
                     aliSum.add(other.vel);
                     countAli++;
                 }
@@ -162,7 +194,7 @@ public class Particle {
         }
         if (countCoh > 0) {
             cohSum.div(countCoh);
-            steering.add(seek(cohSum).mult(0.8f));
+            steering.add(applySeeking(cohSum).mult(0.8f));
         }
         if (countAli > 0) {
             aliSum.div(countAli);
