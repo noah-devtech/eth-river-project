@@ -88,7 +88,7 @@ cd visualizer
 
 ## Colors for Visualization
 
-![Color](COLOR-MAP.png)
+![可視化用プロトコルカラーマップ / Protocol Color Mapping for Visualization](COLOR-MAP.png)
 
 ## Documentation Links
 
