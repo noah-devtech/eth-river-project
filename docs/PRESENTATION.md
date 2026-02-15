@@ -10,7 +10,6 @@ style: |
   .tls { color: rgb(30,144,255); }
   .http { color: rgb(50,205,50); }
   .dns { color: rgb(0,255,255); }
-  .tls { color: rgb(30,144,255); }
   .tcp-syn { color: rgb(255,255,255); }
 ---
 ## 1. インターネットの知識は不要です
