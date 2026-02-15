@@ -27,6 +27,9 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     context["dest_port"] = get_nested_attr(tcp_layer, "dstport")
 
     flags = get_nested_attr(tcp_layer, "flags_tree")
+    syn = False
+    fin = False
+    ack = False
     if flags:
         syn = get_nested_attr(flags, "syn") == "1"
         fin = get_nested_attr(flags, "fin") == "1"
@@ -54,4 +57,8 @@ def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
         format_output(context, "DATA")
     else:
         # データがない (純粋なACKなど)
-        format_output(context, "TCP")
+        if ack and not syn and not fin:
+            format_output(context, "TCP-ACK")
+
+        else:
+            format_output(context, "TCP")

@@ -6,7 +6,6 @@ import oscP5.OscP5;
 import processing.core.PApplet;
 import processing.core.PFont;
 import processing.core.PGraphics;
-import processing.core.PVector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Main extends PApplet {
 
     private final Object lock = new Object();
-    private final List<Particle> queryBuffer = new ArrayList<>(500);
+    private final ThreadLocal<List<Particle>> threadLocalBuffer = ThreadLocal.withInitial(() -> new ArrayList<>(500));
     OscP5 oscP5;
     int listenPort;
     ArrayList<Particle> particles;
@@ -34,9 +33,13 @@ public class Main extends PApplet {
     float MAX_P_SIZE = 30;
     int counter = 0;
     SimpleQuadTree quadTree;
-    PGraphics fadeLayer;
+    PGraphics particleLayer;
+    PGraphics nodeLayer;
     boolean isDebug;
+    DebugWindow debugWindow = new DebugWindow(this);
     private String[] TARGET_PREFIXES;
+    public Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+    public boolean fullScreenMode = Boolean.parseBoolean(dotenv.get("FULL_SCREEN_MODE", "false"));
 
     public static void main(String[] args) {
         PApplet.main("Main");
@@ -44,29 +47,41 @@ public class Main extends PApplet {
 
     @Override
     public void settings() {
-        size(1200, 1000, P2D);
+        int mainDisplay = Integer.parseInt(dotenv.get("MAIN_DISPLAY", "2"));
+        if(fullScreenMode){
+            fullScreen(P2D,mainDisplay);
+        }else{
+            size(1920,1080,P2D);
+        }
     }
 
     @Override
     public void setup() {
-        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+        PApplet.runSketch(new String[]{"DebugWindow"}, debugWindow);
+        Particle.preAllocate(this, 20000);
 
 
         listenPort = Integer.parseInt(dotenv.get("LISTENING_PORT", "12345"));
         String prefixes = dotenv.get("TARGET_PREFIXES", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16");
         TARGET_PREFIXES = prefixes.split(",");
-        isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "true"));
+        isDebug = Boolean.parseBoolean(dotenv.get("DEBUG_MODE", "false"));
+        if (isDebug) {
+            debugWindow.show();
+        } else {
+            debugWindow.hide();
+        }
         background(0);
-        particles = new ArrayList<>(5000);
+        particles = new ArrayList<>(20000);
         newParticleQueue = new ConcurrentLinkedQueue<>();
         oscP5 = new OscP5(this, listenPort);
         nodes = new ConcurrentHashMap<String, Node>();
-        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        nodeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        particleLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
         pixelDensity(displayDensity());
         windowResizable(true);
         println("OSCサーバーをポート " + listenPort + " で起動しました。");
         println("pyshark (main.py) を実行してください...");
-        PFont font = createFont("BIZ UDPゴシック", 14);
+        PFont font = createFont(dotenv.get("FONT_NAME", "BIZ UDPゴシック"), 14);
         textFont(font);
     }
 
@@ -76,42 +91,75 @@ public class Main extends PApplet {
             particles.add(newParticleQueue.poll());
         }
         if (keyPressed && key == 'f') {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 100; i++) {
                 spawnDebugParticle();
             }
         }
-        fadeLayer.beginDraw();
-        fadeLayer.scale(pixelDensity);
-        fadeLayer.blendMode(SUBTRACT);
+        particleLayer.beginDraw();
+        particleLayer.scale(pixelDensity);
+        particleLayer.blendMode(SUBTRACT);
 
-        fadeLayer.noStroke();
-        fadeLayer.fill(10);
-        fadeLayer.rect(0, 0, width, height);
+        particleLayer.noStroke();
+        particleLayer.fill(3, 255);
+        particleLayer.rect(0, 0, width, height);
+        particleLayer.blendMode(BLEND);
 
-        fadeLayer.blendMode(ADD);
+        particleLayer.noStroke();
+        particleLayer.fill(0, 10);
+        particleLayer.rect(0, 0, width, height);
+
+        particleLayer.blendMode(ADD);
         SimpleQuadTree.resetPool();
-        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 10, 5);
+        quadTree = SimpleQuadTree.obtain(0, 0, 0, width, height, 50, 5);
         for (Particle p : particles) {
             quadTree.insert(p);
         }
-        synchronized (lock) {
-            float r = 50.0f;
-            for (int i = particles.size() - 1; i >= 0; i--) {
-                Particle p = particles.get(i);
-                queryBuffer.clear();
-                quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
-                p.update(queryBuffer);
-                p.draw(fadeLayer);
-                p.makeNodeAlive();
-                if (p.isDead()) {
-                    particles.remove(i);
+        float r = 50.0f;
+
+        particles.parallelStream().forEach(p -> {
+            List<Particle> queryBuffer = threadLocalBuffer.get();
+            queryBuffer.clear();
+            quadTree.query(p.pos.x - r, p.pos.y - r, r * 2, r * 2, queryBuffer);
+            p.calcForces(queryBuffer);
+        });
+
+
+        particleLayer.beginShape(LINES);
+        particleLayer.noFill();
+        particleLayer.strokeWeight(1.0f);
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle p = particles.get(i);
+            p.updatePhysics();
+
+
+            particleLayer.stroke(p.c);
+
+            particleLayer.line(p.prevPos.x, p.prevPos.y, p.pos.x, p.pos.y);
+
+
+            p.makeNodeAlive();
+            if (p.isDead()) {
+                int lastIndex = particles.size() - 1;
+                if (i != lastIndex) {
+                    Particle lastParticle = particles.remove(lastIndex);
+                    particles.set(i, lastParticle);
+                } else {
+                    particles.remove(lastIndex);
                 }
+                Particle.recycle(p);
             }
         }
-        fadeLayer.endDraw();
+        particleLayer.endShape();
+        particleLayer.endDraw();
         background(0);
         blendMode(BLEND);
-        image(fadeLayer, 0, 0, width, height);
+        image(particleLayer, 0, 0, width, height);
+
+        nodeLayer.beginDraw();
+        nodeLayer.scale(pixelDensity);
+        nodeLayer.clear();
+
+        nodeLayer.blendMode(ADD);
 
         for (Node node : nodes.values()) {
             node.separate(nodes);
@@ -124,18 +172,8 @@ public class Main extends PApplet {
             }
         }
 
-        fill(255, 150);
-        textSize(14);
-        text("Listening on port: " + listenPort, 20, 30);
-        text("Last Address: " + lastAddress, 20, 50);
-        text("Protocol: " + lastProtocol, 20, 70);
-        text("Length: " + lastLength, 20, 90);
-        text("Source IP: " + lastSrcIp, 20, 110);
-        text("Dest IP: " + lastDstIp, 20, 130);
-        text("Packet NO: " + lastNumber, 20, 150);
-        text("Particle Count: " + particles.size(), 20, 170);
-        text("Particle Total Count: " + counter, 20, 190);
-        text("Frame Rate: " + String.format("%.2f", frameRate) + " fps", 20, 210);
+        nodeLayer.endDraw();
+        image(nodeLayer, 0, 0, width, height);
     }
 
     void oscEvent(OscMessage theOscMessage) {
@@ -150,30 +188,37 @@ public class Main extends PApplet {
 
             int particleColor;
             particleColor = switch (lastProtocol) {
-                case "tcp" -> color(255, 128, 0);
-                case "dns" -> color(0, 255, 0);
-                case "tls-hello" -> color(255, 255, 0);
-                case "tls" -> color(0, 0, 200);
-                case "http" -> color(0, 150, 255);
-                case "wg" -> color(64, 0, 128);
-                case "quic" -> color(255, 0, 255);
-                case "data" -> color(255, 0, 0);
+                case "tcp-ack" -> color(255, 255, 0);
+                case "tcp-syn" -> color(255, 255, 255);
+                case "tcp-fin" -> color(150, 150, 150);
+
+                case "dns" -> color(0, 255, 255);
+                case "http" -> color(50, 205, 50);
+
+                case "https", "tls-hello", "tls" -> color(30, 144, 255);
+
+                case "quic" -> color(255, 20, 147);
+
+                case "tcp" -> color(186, 85, 211);
+                case "wg" -> color(136, 13, 16);
+                case "data" -> color(255, 140, 0);
+
                 default -> {
                     println("non-defined protocol:", lastProtocol);
-                    yield color(255, 255, 255);
+                    yield color(0, 51, 51);
                 }
             };
 
             Node srcNode = getOrCreateNode(lastSrcIp);
             Node dstNode = getOrCreateNode(lastDstIp);
             float sqrtLength = sqrt(lastLength);
-            float particleSize = map(sqrtLength, sqrt(1), sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
+            float particleSize = map(sqrtLength, 1, sqrt(MAX_RAW_LENGTH), MIN_P_SIZE, MAX_P_SIZE);
             particleSize = max(MIN_P_SIZE, particleSize);
             float particleSpeed = 5;
 
+
+            newParticleQueue.add(Particle.obtain(srcNode, dstNode, particleSpeed, particleColor, particleSize));
             synchronized (lock) {
-                // 変更点: 第一引数に this を渡す
-                newParticleQueue.add(new Particle(this, srcNode, dstNode, particleSpeed, particleColor, particleSize));
                 counter++;
             }
 
@@ -218,17 +263,15 @@ public class Main extends PApplet {
         } else {
             x = random(width * 0.1f, width * 0.2f);
         }
-
-        PVector pos = new PVector(x, y);
-        // 変更点: 第一引数に this を渡す
-        Node newNode = new Node(this, ip, pos, isLocal);
+        Node newNode = new Node(this, ip, x, y, isLocal);
         nodes.put(ip, newNode);
         return newNode;
     }
 
     @Override
     public void windowResized() {
-        fadeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        particleLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
+        nodeLayer = createGraphics(width * pixelDensity, height * pixelDensity, P2D);
     }
 
     @Override
@@ -239,13 +282,25 @@ public class Main extends PApplet {
         if (key == 'c' || key == 'C') {
             counter = 0;
         }
+        if (key == 'd' || key == 'D') {
+            onToggleDebug();
+        }
     }
 
     void spawnDebugParticle() {
         if (nodes.isEmpty()) return;
         List<Node> nodeList = new ArrayList<>(nodes.values());
-        Node src = nodeList.get((int) random(nodeList.size()));
-        Node dst = nodeList.get((int) random(nodeList.size()));
-        particles.add(new Particle(this, src, dst, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
+        Node srcNode = nodeList.get((int) random(nodeList.size()));
+        Node dstNode = nodeList.get((int) random(nodeList.size()));
+        newParticleQueue.add(Particle.obtain(srcNode, dstNode, 5.0f, color(0, 255, 255), random(MIN_P_SIZE, MAX_P_SIZE)));
+    }
+
+    public void onToggleDebug() {
+        isDebug = !isDebug;
+        if (isDebug) {
+            debugWindow.show();
+        } else {
+            debugWindow.hide();
+        }
     }
 }
