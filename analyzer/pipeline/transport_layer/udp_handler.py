@@ -9,13 +9,13 @@ from ..application_layer import dns_handler
 APPLICATION_HANDLERS = {
     "dns": dns_handler,
 }
+NOISE_PROTOCOLS={"mdns","ssdp","lmnr","dhcp","nbus","netbios_ns","igmp"}
 
 
 def process(packet: Any, layers: List[Any], context: Dict[str, Any]) -> None:
     """
     レイヤー4 (UDP) の処理。
     """
-    NOISE_PROTOCOLS={"mdns","ssdp","lmnr","dhcp","nbus","netbios_ns","igmp"}
     if not layers or layers[0].layer_name != "udp":
         print("This is not UDP packet")
         return
