@@ -2,29 +2,31 @@
 
 ## Narrative
 
-インフラの宿命、それは「正常に機能している時ほど透明になる」ことです。
+> **「パケットは、現代の川である。」**
+>
+>インフラの宿命、それは「正常に機能している時ほど透明になる」ことです。
+>
+>私たちが通信回線やサーバーの存在を強く意識するのは、皮肉にも通信が途切れたり、読み込みが遅延したりする「異常」の瞬間だけかもしれません。
+>
+>しかし、その「透明さ」の裏側では、この瞬間も膨大なデータの激流が渦巻いています。
+>
+>それは決して魔法などではなく、先人達によるエンジニアリングの積み重ねと、物言わぬ機械たちの熱量によって支えられています。
+>
+>画面上で見る1枚のWebページや画像すらも、裏側では「OSI参照モデル」という地図に従い、細切れのデータとして配送され、瞬時に再結合されて初めてその姿を現します。
+>
+>本作品では、そんな見えない情報の激流を、光の川として表現しました。
+>
+>手元の端末でページを開いてみてください。
+>
+>あなたが何気なく放った一滴の粒が、どのようにネットワークという大河の一部となり、世界中を駆け巡るのか。
+>
+>そして、その膨大なデータを処理するために、機械たちがどれほどの熱量で稼働しているのか。
+>
+>何も語らぬその物語に、しばし思いを馳せてみてください。
 
-私たちが通信回線やサーバーの存在を強く意識するのは、皮肉にも通信が途切れたり、読み込みが遅延したりする「異常」の瞬間だけかもしれません。
-
-しかし、その「透明さ」の裏側では、この瞬間も膨大なデータの激流が渦巻いています。
-
-それは決して魔法などではなく、先人達によるエンジニアリングの積み重ねと、物言わぬ機械たちの熱量によって支えられています。
-
-画面上で見る1枚のWebページや画像すらも、裏側では「OSI参照モデル」という地図に従い、細切れのデータとして配送され、瞬時に再結合されて初めてその姿を現します。
-
-本作品では、そんな見えない情報の激流を、光の川として表現しました。
-
-手元の端末でページを開いてみてください。
-
-あなたが何気なく放った一滴の粒が、どのようにネットワークという大河の一部となり、世界中を駆け巡るのか。
-
-そして、その膨大なデータを処理するために、機械たちがどれほどの熱量で稼働しているのか。
-
-何も語らぬその物語に、しばし思いを馳せてみてください。
+---
 
 ## Overview
-
-> **Visualizing network traffic flow using OSC protocol.**
 
 **Ethernet River** は、ネットワークパケットの流れを「光の川」としてリアルタイムに可視化するインタラクティブ・インスタレーションです。
 
@@ -36,9 +38,21 @@
 
 ## Demo
 
-![eth-river-demo](eth-river.gif)
+### Installation view at [MEISEI STEAM FESTIVAL 2026](https://www.is.meisei-u.ac.jp/news/2600/)
+
+<div>
+<img src="img/booth.JPG" width="75%" alt="Exhibit Booth" />
+</div>
+<em>展示ブース全景</em>
+
+<div>
+<img src="img/screen.JPG" width="50%" alt="Visualization Screen" />
+</div>
+<em>パケット可視化の様子</em>
 
 ## Tech Stack
+
+### Programming Languages & Tools
 
 <div style="white-space: nowrap;">
   <img src="https://img.shields.io/badge/python-3670A0?logo=python&logoColor=ffdd54" alt="Python" />
@@ -46,10 +60,18 @@
   <img src="https://img.shields.io/badge/java-%23ED8B00.svg?logo=openjdk&logoColor=white" alt="Java" />
   <img src="https://img.shields.io/badge/Gradle-02303A?logo=Gradle&logoColor=white" alt="Gradle" />
   <img src="https://img.shields.io/badge/Processing-003366?&logoColor=white" alt="Processing">
-  <img src="https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black" alt="Linux" />
+  <img src="https://img.shields.io/badge/Ubuntu-E95420?logo=Ubuntu&logoColor=white" alt="Ubuntu" />
   <img src="https://img.shields.io/badge/git-%23F05033.svg?logo=git&logoColor=white" alt="Git" />
   <img src="https://img.shields.io/badge/-GitHub-181717.svg?logo=github" alt="Github" />
   <img src="https://img.shields.io/badge/Wireshark-1679A7?logo=wireshark&logoColor=white" alt="Wireshark" />
+</div>
+
+### Network Hardware
+
+<div style="white-space: nowrap;">
+  <img src="https://img.shields.io/badge/YAMAHA-4B1E78?logo=yamahacorporation&logoColor=white" alt="YAMAHA" />
+  <img src="https://img.shields.io/badge/Cisco-1BA0D7?logo=cisco&logoColor=white" alt="Cisco" />
+  <img src="https://img.shields.io/badge/BUFFALO-F80A09?logo=buffalo&logoColor=white" alt="BUFFALO" />
 </div>
 
 ## Architecture
@@ -63,10 +85,10 @@
 
 本システムはイベント会場での安定稼働を目的として、以下の機材で構築する予定です。
 
-* **WAN:** Speed Wi-Fi HOME 5G L13
-* **Router:** Yamaha FWX120 (NAPT/Port Mirroring)
-* **AP:** Cisco Aironet AIR-AP1832I-Q-K9
-* **Switch:** Buffalo BS-GS2008P (PoE+ Smart Switch)
+* **WAN:** Speed Wi-Fi HOME 5G L13 (Internet Connection)
+* **Router:** Yamaha FWX120 (NAPT/Firewall/DHCP Server/VLAN)
+* **AP:** Cisco Aironet AIR-AP1832I-Q-K9 (Wi-Fi/VLAN)
+* **Switch:** Buffalo BS-GS2008P (PoE+/Port Mirroring/VLAN)
 
 ## How to use?
 
@@ -82,13 +104,18 @@ uv run main.py
 
 ```sh
 cd visualizer
-./gradlew build
 ./gradlew run
 ```
 
 ## Colors for Visualization
 
-![可視化用プロトコルカラーマップ / Protocol Color Mapping for Visualization](COLOR-MAP.png)
+<div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+  <img src="img/COLOR-MAP.png" width="50%" alt="Protocol Color Mapping for Visualization" />
+</div>
+<p align="center">
+  <em>Protocol Color Mapping for Visualization</em>
+</p>
+
 
 ## Documentation Links
 
